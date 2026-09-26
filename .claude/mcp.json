@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "lean-ctx": {
+      "command": "lean-ctx",
+      "args": []
+    },
+    "roam-code": {
+      "command": "roam",
+      "args": ["mcp"]
+    },
+    "context7": {
+      "command": "context7-mcp",
+      "args": []
+    },
+    "searxng": {
+      "command": "bunx",
+      "args": ["mcp-searxng"],
+      "env": {
+        "SEARXNG_URL": "http://localhost:4001"
+      }
+    },
+    "maestro": {
+      "command": "maestro",
+      "args": ["mcp", "serve"]
+    },
+    "playwright": {
+      "command": "bunx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}

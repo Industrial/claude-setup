@@ -1,0 +1,362 @@
+{
+  "enabledPlugins": {
+    "claude-obsidian@claude-obsidian-marketplace": false,
+    "gitkraken-hooks@gitkraken": true,
+    "id-workflow@idclear": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-obsidian-marketplace": {
+      "source": {
+        "repo": "AgriciDaniel/claude-obsidian",
+        "source": "github"
+      }
+    },
+    "gitkraken": {
+      "source": {
+        "path": "./.claude/plugins/marketplaces/gitkraken",
+        "source": "directory"
+      }
+    },
+    "idclear": {
+      "source": {
+        "path": "./.claude/harness",
+        "source": "directory"
+      }
+    }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      },
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook read-dedup",
+            "type": "command"
+          }
+        ],
+        "matcher": "Read"
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook rewrite",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash|bash"
+      },
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook redirect",
+            "type": "command"
+          }
+        ],
+        "matcher": "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory|Glob|glob"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ]
+  },
+  "permissions": {
+    "//allow": [
+      "The id-workflow hooks deny native Read/Grep and route them to lean-ctx and",
+      "roam-code. A denied native tool plus an unapproved replacement is a session",
+      "that cannot read anything at all, so the replacements are pre-approved here.",
+      "The split mirrors the native permission model rather than widening it:",
+      "read-class tools are allowed the way native Read and Grep are, while the",
+      "write and execute class (ctx_patch, ctx_shell) is deliberately absent and",
+      "still prompts, the way native Edit, Write and Bash do."
+    ],
+    "allow": [
+      "mcp__lean-ctx__ctx_read",
+      "mcp__lean-ctx__ctx_search",
+      "mcp__lean-ctx__ctx_tree",
+      "mcp__lean-ctx__ctx_glob",
+      "mcp__lean-ctx__ctx_compose",
+      "mcp__lean-ctx__ctx_callgraph",
+      "mcp__lean-ctx__ctx_expand",
+      "mcp__roam-code__roam_search_symbol",
+      "mcp__roam-code__roam_context",
+      "mcp__roam-code__roam_uses",
+      "mcp__roam-code__roam_deps",
+      "mcp__roam-code__roam_explore",
+      "mcp__roam-code__roam_trace",
+      "mcp__roam-code__roam_understand",
+      "mcp__roam-code__roam_diff",
+      "mcp__searxng__searxng_web_search",
+      "mcp__searxng__web_url_read",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Skill(mcp-debug)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./.hermes/auth.json)",
+      "Read(./**/*.pem)",
+      "Read(./**/id_rsa*)",
+      "Read(**/.credentials.json)",
+      "Grep",
+      "Glob"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "command": "./.claude/harness/plugins/id-workflow/statusline.sh",
+    "padding": 0,
+    "type": "command"
+  },
+  "tui": "fullscreen",
+  "skillOverrides": {
+    "a11y-playwright-testing": "user-invocable-only",
+    "abstraction-laddering": "user-invocable-only",
+    "abstraction-layer-pattern": "user-invocable-only",
+    "accessibility-auditing": "user-invocable-only",
+    "activate": "user-invocable-only",
+    "adding-docker": "user-invocable-only",
+    "agent": "user-invocable-only",
+    "ai-agents-ui-skills": "user-invocable-only",
+    "ai-sdk-6-skills": "user-invocable-only",
+    "api-gleam": "user-invocable-only",
+    "architecture-doc-authoring": "user-invocable-only",
+    "architecture-patterns": "user-invocable-only",
+    "authjs-skills": "user-invocable-only",
+    "balancing-feedback-loop": "user-invocable-only",
+    "brand-guidelines": "user-invocable-only",
+    "busirocket-nextjs": "user-invocable-only",
+    "busirocket-react": "user-invocable-only",
+    "canvas-design": "user-invocable-only",
+    "clerk-nextjs-skills": "user-invocable-only",
+    "comparing-branches-visually": "user-invocable-only",
+    "concept-map": "user-invocable-only",
+    "confidence-speed-quality": "user-invocable-only",
+    "connection-circles": "user-invocable-only",
+    "containers-orchestration": "user-invocable-only",
+    "context-dissolution": "user-invocable-only",
+    "cqrs-implementation": "user-invocable-only",
+    "cynefin-framework": "user-invocable-only",
+    "dark-mode-testing": "user-invocable-only",
+    "ddd-context-dissolution": "user-invocable-only",
+    "ddd-context-mapping": "user-invocable-only",
+    "ddd-strategic-design": "user-invocable-only",
+    "ddd-tactical-patterns": "user-invocable-only",
+    "debate": "user-invocable-only",
+    "decision-matrix": "user-invocable-only",
+    "definitively-agent-config": "user-invocable-only",
+    "dev-caches-cleanup": "user-invocable-only",
+    "disk-audit": "user-invocable-only",
+    "disk-cleanup-plan": "user-invocable-only",
+    "docker-agents-generator": "user-invocable-only",
+    "docker-agents-review": "user-invocable-only",
+    "docker-cleanup": "user-invocable-only",
+    "docker-core-architecture": "user-invocable-only",
+    "docker-core-networking": "user-invocable-only",
+    "docker-core-security": "user-invocable-only",
+    "docker-errors-build": "user-invocable-only",
+    "docker-errors-compose": "user-invocable-only",
+    "docker-errors-networking": "user-invocable-only",
+    "docker-errors-runtime": "user-invocable-only",
+    "docker-helper": "user-invocable-only",
+    "docker-impl-build-optimization": "user-invocable-only",
+    "docker-impl-cicd": "user-invocable-only",
+    "docker-impl-compose-workflows": "user-invocable-only",
+    "docker-impl-go-templates": "user-invocable-only",
+    "docker-impl-production": "user-invocable-only",
+    "docker-impl-storage": "user-invocable-only",
+    "docker-syntax-buildkit": "user-invocable-only",
+    "docker-syntax-cli-containers": "user-invocable-only",
+    "docker-syntax-cli-images": "user-invocable-only",
+    "docker-syntax-compose-resources": "user-invocable-only",
+    "docker-syntax-compose-services": "user-invocable-only",
+    "docker-syntax-dockerfile": "user-invocable-only",
+    "docker-syntax-multistage": "user-invocable-only",
+    "eisenhower-matrix": "user-invocable-only",
+    "elixir-concurrency": "user-invocable-only",
+    "elixir-core": "user-invocable-only",
+    "elixir-liveview": "user-invocable-only",
+    "elixir-otp-design": "user-invocable-only",
+    "elixir-phoenix": "user-invocable-only",
+    "elixir-review": "user-invocable-only",
+    "elixir-testing": "user-invocable-only",
+    "event-sourcing": "user-invocable-only",
+    "event-store-design": "user-invocable-only",
+    "first-principles": "user-invocable-only",
+    "fixing-accessibility": "user-invocable-only",
+    "fixing-motion-performance": "user-invocable-only",
+    "frontend-engineering": "user-invocable-only",
+    "gleam": "user-invocable-only",
+    "gleam-backend": "user-invocable-only",
+    "gleam-idiomatic": "user-invocable-only",
+    "hard-choice": "user-invocable-only",
+    "hermes-configuration-management": "user-invocable-only",
+    "hermes-environment-replication": "user-invocable-only",
+    "hermes-lmstudio-connection": "user-invocable-only",
+    "hermes-plugin-authoring": "user-invocable-only",
+    "hermes-plugin-development": "user-invocable-only",
+    "hermes-provider-and-free-model-discovery": "user-invocable-only",
+    "iceberg-model": "user-invocable-only",
+    "id": "user-invocable-only",
+    "id-effect": "user-invocable-only",
+    "id-effect-algebra": "user-invocable-only",
+    "id-effect-capabilities": "user-invocable-only",
+    "id-effect-compute-fabric": "user-invocable-only",
+    "id-effect-concurrency": "user-invocable-only",
+    "id-effect-errors": "user-invocable-only",
+    "id-effect-events": "user-invocable-only",
+    "id-effect-fsm": "user-invocable-only",
+    "id-effect-fundamentals": "user-invocable-only",
+    "id-effect-integration": "user-invocable-only",
+    "id-effect-migration": "user-invocable-only",
+    "id-effect-optics": "user-invocable-only",
+    "id-effect-parse": "user-invocable-only",
+    "id-effect-platform": "user-invocable-only",
+    "id-effect-resilience": "user-invocable-only",
+    "id-effect-review": "user-invocable-only",
+    "id-effect-schema": "user-invocable-only",
+    "id-effect-stm": "user-invocable-only",
+    "id-effect-streams": "user-invocable-only",
+    "id-effect-testing": "user-invocable-only",
+    "id-execute": "user-invocable-only",
+    "id-lanes": "user-invocable-only",
+    "id-orient": "user-invocable-only",
+    "id-plan": "user-invocable-only",
+    "id-research": "user-invocable-only",
+    "id-review": "user-invocable-only",
+    "id-ship": "user-invocable-only",
+    "idclear-docker-compose-modes": "user-invocable-only",
+    "idclear-logto-monorepo": "user-invocable-only",
+    "idclear-vps-testing-deploy": "user-invocable-only",
+    "impact-effort": "user-invocable-only",
+    "inversion": "user-invocable-only",
+    "issue-trees": "user-invocable-only",
+    "json-render-react": "user-invocable-only",
+    "ladder-of-inference": "user-invocable-only",
+    "literature-search-arxiv": "user-invocable-only",
+    "literature-search-openalex": "user-invocable-only",
+    "logto-open-source-auth-infrastructure": "user-invocable-only",
+    "lustre": "user-invocable-only",
+    "lustre-guide": "user-invocable-only",
+    "maestro-command-migration": "user-invocable-only",
+    "maestro-design": "user-invocable-only",
+    "maestro-handoff": "user-invocable-only",
+    "maestro-mcp-patterns": "user-invocable-only",
+    "maestro-mission": "user-invocable-only",
+    "maestro-setup": "user-invocable-only",
+    "maestro-task": "user-invocable-only",
+    "maestro-verify": "user-invocable-only",
+    "mcp-server-skills": "user-invocable-only",
+    "mikro-orm-idclear": "user-invocable-only",
+    "next-upgrade": "user-invocable-only",
+    "nextjs-react-typescript": "user-invocable-only",
+    "nixos-codebase-analysis": "user-invocable-only",
+    "nixos-improvements": "user-invocable-only",
+    "ooda-loop": "user-invocable-only",
+    "optimized-nextjs-typescript": "user-invocable-only",
+    "pg-gleam": "user-invocable-only",
+    "playwright-ci": "user-invocable-only",
+    "playwright-core": "user-invocable-only",
+    "playwright-migration": "user-invocable-only",
+    "playwright-pom": "user-invocable-only",
+    "pre-push": "user-invocable-only",
+    "prism-3way": "user-invocable-only",
+    "prism-discover": "user-invocable-only",
+    "prism-full": "user-invocable-only",
+    "prism-reflect": "user-invocable-only",
+    "prism-scan": "user-invocable-only",
+    "productive-thinking-model": "user-invocable-only",
+    "quality": "user-invocable-only",
+    "react-view-transitions": "user-invocable-only",
+    "reinforcing-feedback-loop": "user-invocable-only",
+    "release-engineering": "user-invocable-only",
+    "responsive-testing": "user-invocable-only",
+    "saga-orchestration": "user-invocable-only",
+    "scienceskillscommon": "user-invocable-only",
+    "second-order-thinking": "user-invocable-only",
+    "shadcn-skills": "user-invocable-only",
+    "six-thinking-hats": "user-invocable-only",
+    "skill-library-structure": "user-invocable-only",
+    "skills": "user-invocable-only",
+    "supabase-nextjs": "user-invocable-only",
+    "temporal-cloud": "user-invocable-only",
+    "temporal-developer": "user-invocable-only",
+    "temporal-workflow-design-critic": "user-invocable-only",
+    "theme-factory": "user-invocable-only",
+    "using-ui-stack": "user-invocable-only",
+    "visual-qa-testing": "user-invocable-only",
+    "web-artifacts-builder": "user-invocable-only",
+    "web-design-guidelines": "user-invocable-only",
+    "web-research-techniques": "user-invocable-only",
+    "webapp-playwright-testing": "user-invocable-only",
+    "workflow-skill-creator": "user-invocable-only",
+    "zwicky-box": "user-invocable-only"
+  }
+}

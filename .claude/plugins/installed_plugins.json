@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "plugins": {
+    "id-workflow@idclear": [
+      {
+        "scope": "user",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T21:47:28.277Z",
+        "lastUpdated": "2026-08-25T21:47:28.277Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/data/Code/rust/solana-yield-optimizer",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T22:07:15.347Z",
+        "lastUpdated": "2026-08-25T22:07:15.347Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec"
+      },
+      {
+        "scope": "project",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T23:00:04.886Z",
+        "lastUpdated": "2026-08-25T23:00:04.886Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec",
+        "projectPath": "/data/Code/idclear/monorepo"
+      }
+    ],
+    "pyright-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T23:00:04.886Z",
+        "lastUpdated": "2026-08-25T23:00:04.886Z"
+      }
+    ],
+    "rust-analyzer-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/rust-analyzer-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T23:00:04.886Z",
+        "lastUpdated": "2026-08-25T23:00:04.886Z"
+      }
+    ],
+    "typescript-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-08-25T23:00:04.886Z",
+        "lastUpdated": "2026-08-25T23:00:04.886Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "idclear": {
+    "source": {
+      "source": "directory",
+      "path": "/home/tom/.claude/harness"
+    },
+    "installLocation": "/home/tom/.claude/harness",
+    "lastUpdated": "2026-08-27T06:05:17.071Z"
+  },
+  "agricidaniel-claude-obsidian": {
+    "source": {
+      "source": "github",
+      "repo": "AgriciDaniel/claude-obsidian"
+    },
+    "installLocation": "/home/tom/.claude/plugins/marketplaces/agricidaniel-claude-obsidian",
+    "lastUpdated": "2026-08-25T21:47:32.380Z"
+  },
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "installLocation": "/home/tom/.claude/plugins/marketplaces/claude-plugins-official",
+    "lastUpdated": "2026-08-27T05:38:57.213Z"
+  }
+}
