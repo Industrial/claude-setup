@@ -1,5 +1,8 @@
 ---
 name: effect.ts-data-modeling
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: >-
   Teaches Effect.ts domain data modeling: Data.TaggedEnum for unions, Data.TaggedError
   for failures, Data.TaggedClass for class-based variants, Schema at boundaries.

@@ -1,5 +1,8 @@
 ---
 name: logto-management-api
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: Configure and automate Logto via the Management API — users, organizations, roles, applications, connectors, sign-in experience, webhooks, and M2M apps. Use when seeding tenants, provisioning org roles, syncing connectors, or scripting Logto admin tasks. Triggers on openapi.logto.io, Management API, M2M application, organization roles, connector factories.
 ---
 

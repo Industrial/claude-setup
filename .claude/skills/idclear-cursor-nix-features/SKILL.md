@@ -1,5 +1,9 @@
 ---
 name: idclear-cursor-nix-features
+paths:
+  - ".cursor/nix/**"
+  - "**/devenv.nix"
+  - "**/devenv.yaml"
 description: >-
   Editing the shared devenv feature modules under `.cursor/nix/features/` for
   this monorepo — feature-flag pattern, mkDefault vs mkForce precedence,

@@ -1,5 +1,9 @@
 ---
 name: mikro-orm-fundamentals
+paths:
+  - "**/*.ts"
+  - "**/entities/**"
+  - "**/migrations/**"
 description: >-
   Teaches MikroORM v7 core architecture: EntityManager, Identity Map, Unit of Work,
   persist vs flush, em.fork(), and RequestContext. Use when learning MikroORM, debugging

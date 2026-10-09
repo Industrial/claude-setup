@@ -1,5 +1,8 @@
 ---
 name: mikro-orm-entities
+paths:
+  - "**/*.ts"
+  - "**/entities/**"
 description: >-
   Defines MikroORM v7 entities with defineEntity and p.* helpers, relationships
   (ManyToOne, OneToMany, ManyToMany), Collection, Ref wrappers, embeddables, and

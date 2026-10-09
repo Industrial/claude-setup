@@ -1,5 +1,8 @@
 ---
 name: effect.ts-testing
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: >-
   Expert in testing Effect.ts code using Effect's built-in Layer-based dependency injection system.
   Never use vi.mock() or jest.mock() for Effect services - always use Effect's Layer system instead.

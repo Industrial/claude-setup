@@ -1,5 +1,8 @@
 ---
 name: idclear-git-hooks-config
+paths:
+  - ".cursor/nix/features/git-hooks*"
+  - "**/.pre-commit-config.yaml"
 description: Configure idclear's git-hooks layer — prek (Rust pre-commit) hooks emitted by .cursor/nix/features/git-hooks-prek.nix, and the git-hooks-moon feature that wires devenv shell scripts (pre-commit, pre-push) to `moon run :target --affected remote --cache off`. Use when changing hook output verbosity, swapping a hook entry, adding a new hook, or debugging why hook output is hidden / hook scripts can't find moon.
 ---
 

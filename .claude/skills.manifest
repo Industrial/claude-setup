@@ -1,17 +1,24 @@
 # Which skills carry a description in the session roster — and are therefore
 # available for Claude to auto-invoke without being named by the user.
 #
-# There is exactly ONE skill tree: .claude/skills/. Every skill is a real
+# There is exactly ONE skill tree: .claude/skills/ (reached through the .claude
+# symlink into the .claude-setup submodule, which is SHARED ACROSS REPOS — a
+# demotion here lands in every repo that uses this setup). Every skill is a real
 # directory there. Nothing is symlinked, nothing is copied, and nothing moves
-# between directories. There is no skill-library/ and no sync script; both were
-# removed once the two source trees they reconciled (.cursor/skills,
-# .hermes/skills) ceased to exist.
+# between directories. There is no sync script; it was removed once the two
+# source trees it reconciled (.cursor/skills, .hermes/skills) ceased to exist.
 #
 # This file decides listing cost, not existence. Everything NOT listed here is
-# set to "user-invocable-only" in .claude/settings.json under `skillOverrides`:
-# still installed, still reachable as /<name>, still readable by path — it just
-# does not spend roster budget at session start. The `skill-library` skill
-# explains how to search the tree on demand.
+# set to "name-only" in .claude/settings.json under `skillOverrides`: the NAME
+# still reaches the model, the description does not. Still installed, still
+# reachable as /<name>, still readable by path, and — critically — still
+# invocable by Claude. It simply cannot be auto-matched, so something has to
+# recognise the name. The `skill-library` skill is how.
+#
+# Do NOT use "user-invocable-only" here. That state hides the skill from the
+# model entirely, so Claude cannot invoke it at all — a router can locate a
+# skill and still be unable to run it. The whole long tail sat in that state
+# until 2026-10-09, which silently broke `skill-library` and `/skills`.
 #
 # THE BUDGET IS CHARACTERS, NOT ENTRIES.
 #
@@ -25,11 +32,25 @@
 # roster truncated around position 73 of 81: `scrutinize` (505 ch) and
 # `system-design` (700 ch) arrived bare, while `tdd` at position 78 survived
 # purely because its description was 75 chars and still fit. That is a greedy
-# byte-fill hitting a ceiling, which sits somewhere near 21,000 chars.
+# byte-fill hitting a ceiling, which sat somewhere near 21,000 chars.
 #
 # So "90 entries" was the wrong control variable — a roster of 90 short
 # descriptions fits comfortably while 81 long ones did not. Budget the sum of
-# description lengths and keep it under ~18,000 chars for margin.
+# description lengths, not the entry count.
+#
+# THE CEILING IS NOW PINNED, NOT INFERRED. As of 2026-10-09 settings.json sets
+#
+#     "env": { "SLASH_COMMAND_TOOL_CHAR_BUDGET": "30000" }
+#
+# because the default budget scales with the model's context window — so the
+# ~21,000 figure above was never a property of the roster, only of whichever
+# model measured it. Pinning it makes the ceiling the same on every model.
+#
+# Current spend, measured 2026-10-09: ~16,600 chars of rostered descriptions
+# (50 entries) plus 3,590 chars of bare names (182 entries) = ~20,200 of 30,000.
+# Re-measure with /context (Skills row = post-budget size) and /skill-doctor
+# (per-skill cost + invocation counts). Do not trust these numbers after you add
+# entries; re-run the audit in `skill-library`.
 #
 # IDENTITY IS THE DIRECTORY NAME, not the frontmatter `name:`. 28 skills differ
 # between the two — `dev-caches-cleanup` declares `linux-dev-caches-cleanup`,
@@ -60,6 +81,7 @@ plan-hierarchically
 implement-hierarchical-plan
 agent-role-selection
 debate-mode
+scientific-method
 activate-tooling
 maestro
 new-skill

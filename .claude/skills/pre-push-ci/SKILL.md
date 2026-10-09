@@ -1,5 +1,8 @@
 ---
 name: pre-push-ci
+paths:
+  - "**/bun.lock"
+  - "**/bunfig.toml"
 description: >-
   Run bun run ci:pre-push Maestro-centrically: create small Maestro tasks/specs for each problem found (including other libs in the monorepo) and finish them one by one.
 ---

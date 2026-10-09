@@ -1,5 +1,8 @@
 ---
 name: idclear-e2e-suite
+paths:
+  - "apps/e2e-test/**"
+  - "**/*.spec.ts"
 description: >-
   Running the Playwright E2E suites in the idclear monorepo (apps/e2e-test):
   the serial runner, compose-stack prerequisites, devenv wrapping, subset runs,

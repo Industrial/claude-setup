@@ -1,5 +1,8 @@
 ---
 name: mikro-orm-persistence
+paths:
+  - "**/*.ts"
+  - "**/entities/**"
 description: >-
   Persists MikroORM v7 changes via Unit of Work: persist/flush/remove, cascades,
   em.transactional and @Transactional propagation, soft-delete subscribers, and

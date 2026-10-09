@@ -1,5 +1,8 @@
 ---
 name: mikro-orm-querying
+paths:
+  - "**/*.ts"
+  - "**/entities/**"
 description: >-
   Queries MikroORM v7 entities with find/findOne/findAndCount, FilterQuery operators,
   populate strategies, partial fields, filters, and QueryBuilder. Use when writing reads,

@@ -1,5 +1,8 @@
 ---
 name: effect.ts-react
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: >-
   Next.js App Router + React with Effect.ts via @idclear/effect-react: ServerAppLayer
   and ClientAppLayer, useServerEffect on RSC, useEffectQuery/useEffectMutation on client,

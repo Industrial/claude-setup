@@ -1,5 +1,7 @@
 ---
 name: hermes-tool-routing-hooks
+paths:
+  - ".hermes/**"
 description: Block or redirect Hermes native tools via pre_tool_call shell hooks, forcing use of MCP servers (lean-ctx, roam-code, searxng, context7, etc.). Mirrors the .cursor/hooks/block-native-*.sh contract. Use when the user wants to gate any native Hermes tool (read_file, write_file, patch, search_files, web_search, web_extract, delegate_task, cronjob, browser_*), add a tool-routing policy, or align Hermes behavior with the existing Cursor routing setup.
 ---
 

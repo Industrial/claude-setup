@@ -1,5 +1,9 @@
 ---
 name: next-cache-components
+paths:
+  - "**/*.tsx"
+  - "**/next.config.*"
+  - "**/app/**"
 description: Next.js 16 Cache Components - PPR, use cache directive, cacheLife, cacheTag, updateTag
 ---
 

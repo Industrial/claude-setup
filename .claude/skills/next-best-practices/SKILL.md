@@ -1,5 +1,11 @@
 ---
 name: next-best-practices
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/next.config.*"
+  - "**/app/**"
+  - "**/pages/**"
 description: Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling
 user-invocable: false
 ---

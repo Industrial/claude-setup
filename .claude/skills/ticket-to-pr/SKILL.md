@@ -1,5 +1,10 @@
 ---
 name: ticket-to-pr
+# No `paths:` gate, deliberately (2026-10-09). This skill is INTENT-triggered
+# -- "work GH-1426", "take this ticket to a PR" -- not file-triggered. It has to
+# match before any file is opened, so a paths: glob would stop it activating in
+# the repo it exists for. Left fully rostered; demote it from skills.manifest if
+# its description budget is ever needed.
 description: >-
   Take one GitHub ticket all the way to a green PR without stopping for approval:
   ingest the issue body, comments and screenshots, diagnose it, plan it through

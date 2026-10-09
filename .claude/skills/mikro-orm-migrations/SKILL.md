@@ -1,5 +1,8 @@
 ---
 name: mikro-orm-migrations
+paths:
+  - "**/*.ts"
+  - "**/migrations/**"
 description: >-
   Manages MikroORM v7 schema migrations with the Migrator extension: migration:create,
   migration:up/down, schema diff, transactional batches, and programmatic migrator API.

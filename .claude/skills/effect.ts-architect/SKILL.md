@@ -1,5 +1,8 @@
 ---
 name: effect.ts-architect
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: >-
   Expert in Effect.ts architecture, design patterns, and best practices for building
   production-grade TypeScript applications using Effect's functional effect system.

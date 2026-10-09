@@ -1,5 +1,9 @@
 ---
 name: improve-test-coverage
+paths:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/lcov.info"
 description: >
   Improve unit-test coverage of a specific app or package in this monorepo by
   targeting the largest absolute uncovered-LOC gaps with high-signal pure

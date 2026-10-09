@@ -1,5 +1,8 @@
 ---
 name: effect.ts-fundamentals
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
 description: >-
   Teaches Effect.ts fundamentals: Effect as a value, pipe/flatMap/currying, FP data types
   (Cause, Either, Option, Data, Chunk, Stream), Schema validation, and composition patterns.

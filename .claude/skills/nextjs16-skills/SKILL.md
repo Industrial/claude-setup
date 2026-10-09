@@ -1,5 +1,11 @@
 ---
 name: nextjs16-skills
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/next.config.*"
+  - "**/app/**"
+  - "**/pages/**"
 description: Key facts and links for Next.js 16. Use for planning, writing, and troubleshooting Next.js 16 changes.
 ---
 

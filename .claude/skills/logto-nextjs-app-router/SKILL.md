@@ -1,5 +1,9 @@
 ---
 name: logto-nextjs-app-router
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/middleware.ts"
 description: Integrate Logto authentication with Next.js App Router using @logto/next. Use when configuring sign-in/sign-out, OAuth callbacks, session cookies, scopes and claims, API resource tokens, organization tokens, external session storage, or protected RSC routes. Triggers on LogtoNextConfig, handleSignIn, getLogtoContext, signIn, signOut, getAccessToken, getOrganizationToken.
 ---
 
