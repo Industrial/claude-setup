@@ -5,8 +5,33 @@
 # symlink into the .claude-setup submodule, which is SHARED ACROSS REPOS — a
 # demotion here lands in every repo that uses this setup). Every skill is a real
 # directory there. Nothing is symlinked, nothing is copied, and nothing moves
-# between directories. There is no sync script; it was removed once the two
-# source trees it reconciled (.cursor/skills, .hermes/skills) ceased to exist.
+# between directories.
+#
+# THIS BECAME TRUE ON 2026-10-13. Before that, SEVEN trees existed and drifted:
+#   .claude-setup/.claude/skills            (this one, canonical)
+#   .claude-setup/.claude-setup/.claude/..  (a submodule nested in the submodule)
+#   .cursor/.claude/skills                  (cursor-setup shipped its own copy)
+#   .hermes/skills                          (17)
+#   features/ai/hermes-agent/skills         (16)
+#   features/games/.../idAutomation/.claude-setup/..  (the WoW addon submodule)
+#   ~/.claude/skills                        (2, near-empty global tier)
+#
+# A duplicate tree does not merely waste the roster budget. It RESURRECTS
+# DELETED SKILLS: removing the seven hermes-* skills from this tree made Claude
+# Code re-register all six name-only ones from .cursor/.claude/skills inside the
+# same session, unscoped. It also DOUBLES the roster — discovering
+# .cursor/.claude/skills mid-session added ~230 `.cursor:`-prefixed shadows of
+# skills already listed here, and the two trees carried contradictory routing
+# (that copy of `skill-library` claimed every skill lives in ~/.claude/skills,
+# which holds 2). If a second tree ever reappears, the roster is no longer
+# governed by this file.
+#
+# There is no sync script. `sync-skills.sh` was deleted on 2026-10-13: it was
+# never wired into hooks.json, and its header documented a tier-2 state of
+# "user-invocable-only" (see the warning below) and a `<group>_<subgroup>_<leaf>`
+# underscore naming convention. Neither is what this setup uses — 1 of 231
+# skills contains an underscore. Running it would have regressed the whole cold
+# tier to un-invocable.
 #
 # This file decides listing cost, not existence. Everything NOT listed here is
 # set to "name-only" in .claude/settings.json under `skillOverrides`: the NAME
@@ -92,7 +117,6 @@ improve-test-coverage
 definitively-programs
 mcp-tool-selection
 lean-ctx
-hermes-tool-routing-hooks
 
 # --- nix and this machine ---------------------------------------------------
 nix-and-flakes
@@ -115,7 +139,19 @@ rust-benchmark-ci
 fleet-rust-tooling
 
 # --- trading and research ---------------------------------------------------
+# The four below arrived 2026-10-11 from .cursor/.claude/skills/, which was a
+# second, unreachable skill tree. Operator decision 10.3 of
+# history/2026-10-10T201313Z-andromeda-solana-bandwagon-engine-plan-of-plans.md
+# promoted all six of its orphans into this tree; these four carry the tiering
+# that .cursor's own (legacy) manifest intended, including the two uncommitted
+# additions — falsifier and wealth-controller — whose doctrine the Solana
+# engine's W4 and W5 port. The other two orphans (agent_skill_library,
+# andromeda-backtest-tuning) were never rostered there and are name-only here.
 andromeda-development
+andromeda-autoresearch
+andromeda-dream
+andromeda-falsifier
+andromeda-wealth-controller
 
 # --- typescript, effect, web ------------------------------------------------
 effect.ts-fundamentals
