@@ -1,6 +1,6 @@
 ---
 name: lighter-market-loop
-description: Run one autonomous trading cycle on a Lighter.xyz perpetuals market, given only the tab URL. Use when asked to run a market loop, an MR-1 cycle, a Lighter cycle, or to manage a Lighter perp position on a specific market URL. Resolves the URL to a chrome-devtools page by identity (never a cached page number), runs the staleness detector, reads RSI/DMI/ATR/VolOsc, applies rev-5 entries and rev-7 trailing-stop management, enforces account-level kill switches across concurrent sessions, and appends a log row. One cycle per invocation.
+description: Run one autonomous trading cycle on a Lighter.xyz perpetuals market, given only the tab URL. Use when asked to run a market loop, an MR-1 cycle, a Lighter cycle, or to manage a Lighter perp position on a specific market URL. Resolves the URL to a chrome-devtools page by identity (never a cached page number), runs the staleness detector, reads RSI/DMI/ATR/VolOsc, applies rev-8 counter-trend entries in both directions (short armed above RSI 70, long armed below RSI 30) and rev-7 trailing-stop management, enforces account-level kill switches across concurrent sessions, and appends a log row. One cycle per invocation.
 category: trading
 ---
 
@@ -180,35 +180,112 @@ adjacent to `Close Position` and one click doubles exposure the wrong way.
 Distinguish the three reasons for not ratcheting and name which applies: **threshold**,
 **never-back**, or **the trail moved away from price**.
 
-## 6. If flat — rev 5 entries
+## 6. If flat — rev 8 entries, both directions
 
 Counter-trend by design. Do **not** apply any with-trend ban, DI-direction, ADX or
 VolOsc condition.
 
-- **ARM STATE** lives in `LOGFILE`'s rev-5 section. ARMED once RSI(14) has printed
-  **above 70**; otherwise NOT ARMED.
-- NOT ARMED and RSI > 70 ⇒ **set ARMED, record the cycle, take no trade.**
-- ARMED and RSI < 70 ⇒ **the short triggers.**
+**Rev 8 is rev 5 plus its mirror.** The short side is unchanged — same threshold, same
+arm semantics — so the existing short arm state carries straight over. The long side is
+the reflection through RSI 50. Numbered 8 rather than 6 because rev 5 is superseded
+rather than amended, and the intervening numbers are not free in this log's history.
+
+### Two arm states, tracked separately
+
+**There are now two independent arms**, both living in `LOGFILE`'s rev-8 section. They
+are **not** mutually exclusive and neither one clears the other.
+
+| Arm | Arms when | Fires when | Direction |
+|---|---|---|---|
+| **SHORT-ARM** | RSI(14) prints **above 70** | RSI then reads **below 70** | **SHORT** |
+| **LONG-ARM** | RSI(14) prints **below 30** | RSI then reads **above 30** | **LONG** |
+
+- NOT ARMED on a side and RSI crosses that side's arm level ⇒ **set that arm, record
+  the cycle, take no trade.**
+- Armed on a side and RSI has come back through that level ⇒ **that side triggers.**
+- **Log both arm states every cycle, even when neither moved.** One state line is how
+  the next cycle — possibly in another session — knows what it inherited.
 - **Arming is a state observation, not a trade** — record it even with a position
   open. Entries stay gated on being flat.
-- **Series continuity:** no entry on the first cycle after any reload, navigation,
-  timeframe change, or a tab opened this cycle. A *new tab* is a separate target and
-  does **not** break an existing page's continuity.
+- **A fill consumes only its own arm.** Firing the short clears SHORT-ARM and leaves
+  LONG-ARM exactly as it was. Re-arming a side needs a fresh print through that side's
+  level.
 
-### Submitting the short
+### If both arms are live, take neither — stop and report
+
+Both arms armed at once means RSI traversed 30 and 70 without either trigger being
+consumed, which happens only after a gap in sampling or a position that blocked entries.
+**The arms alone cannot tell you which signal is current.**
+
+**Do not guess, and do not take whichever triggers first.** Report both arms, name the
+levels crossed and when, and let the user clear one. This is the §0 step-4 posture:
+ambiguous state is a stop, not a coin flip.
+
+### One position at a time, and no flips
+
+`max_concurrent_positions` is **1** (§8). With two directions live that constraint now
+does real work instead of being decorative:
+
+- **A position open on either side blocks every entry**, the opposite one included. A
+  long signal while short is open is **not** a reason to close, reverse or hedge.
+- **Never flip.** A direction change is a close followed by a *separately verified*
+  fresh entry on a later cycle, never one action. **`Reverse Position` stays banned**
+  (§5) — with longs enabled it now sits beside a button that would open real opposite
+  exposure, so the ban matters more, not less.
+- **No entry on the same cycle as a stop-out or close.** That cycle's job is to verify
+  the close, update `LEDGER`, and clear the Amount field (click protocol item 7).
+
+### Honest expectation: the long side may almost never fire
+
+**Rev 1 died of exactly this.** It was symmetric — long below K 35, short above K 65 —
+and across a whole session the oscillator never printed above 48.8, so the short gate
+had a near-zero hit rate on the only side that was working. **A symmetric rule in a
+one-way market is a rule with one live half.**
+
+RSI(14) on 5m LIT has spent this experiment roughly between 44 and 76 and **has not
+printed below 30 once.** Expect LONG-ARM to sit unarmed for long stretches and **do not
+read that as a fault.** Record the session's lowest RSI so *"could the long side fire
+here at all?"* is answered with data. If many sessions pass with no long arm, that is
+evidence for the user to lower the threshold — **not licence to lower it mid-flight.**
+
+### Series continuity — applies to both sides
+
+**No entry** on the first cycle after any reload, navigation, timeframe change, or a tab
+opened this cycle. A *new tab* is a separate target and does **not** break an existing
+page's continuity. A **sampling gap** — cycles you simply did not run — is also not a
+continuity break, but see the both-arms-live stop above, which it can cause.
+
+### Submitting the entry
+
+Size is direction-independent. The stop is mirrored.
 
 ```
-size   = floor(0.01 × equity / (2 × ATR_basis))
-SL trigger = entry + 2 × ATR_basis
-SL limit   = trigger × 1.01          # NO TAKE-PROFIT
+size = floor(0.01 × equity / (2 × ATR_basis))
+
+SHORT:  SL trigger = entry + 2 × ATR_basis     SL limit = trigger × 1.01
+LONG:   SL trigger = entry − 2 × ATR_basis     SL limit = trigger × 0.99
+
+                                               # NO TAKE-PROFIT, EITHER SIDE
 ```
+
+**The limit sits beyond the trigger in the direction the stop fires** — above for a
+short, below for a long. Getting that backwards produces a stop that can never fill.
+**Read the two lines off this block; do not derive the long case from memory of the
+short one.**
 
 Report **both** the trigger-based risk (`size × 2 × ATR`) and the worst-case
-**limit-based** risk (`size × (limit − entry)`). The trigger figure is a floor, not an
+**limit-based** risk (`size × |limit − entry|`). The trigger figure is a floor, not an
 expectation — realised stop-outs land between the two.
 
-**Re-read RSI immediately before submitting. If it is back at or above 70, ABORT and
-stay armed.**
+**Re-read RSI immediately before submitting:**
+
+- **short:** if RSI is back **at or above 70**, ABORT and stay short-armed.
+- **long:** if RSI is back **at or below 30**, ABORT and stay long-armed.
+
+**Name the direction out loud before the first click**, and confirm the ticket's own
+Buy/Long or Sell/Short state matches it in the snapshot. The ticket remembers the last
+side used — it has sat on **Sell / Short** for this entire experiment — so **a long
+entry requires explicitly switching it and verifying the switch took.**
 
 On a market order the stop can only be set from **Est. Price**; the fill can differ by
 many ticks, so state the resulting ATR multiple honestly after the fill.
@@ -276,6 +353,12 @@ previous row (the file is large; prefer an anchored edit over rewriting). Log RS
 alongside the DMI/VolOsc observation columns. Record staleness verdict, the basis and
 its back-solve, the pin type when one occurred, and the reason for any non-action.
 
+**Record BOTH rev-8 arm states every cycle** — `SHORT-ARM` and `LONG-ARM`, each ARMED
+or NOT ARMED — even when neither changed, and **state the distance of RSI from both the
+70 and the 30 level.** Two arms held in prose are two arms that get lost; the next
+session reads this row and nothing else. When a side fires, say **which** side, and
+note that the other arm was left untouched.
+
 Keep the spoken report to **one or two lines** unless something fired, the stop was
 ratcheted, a limit tripped, or the staleness check rejected the cycle.
 
@@ -330,12 +413,16 @@ reach it cannot run this skill.
 
 ### Unattended entries are the real exposure
 
-A loop will keep running while the user is away, and **rev 5 can fire an entry with
-nobody watching.** That is the intended design — the venue holds the stop, not this
-session — but it means the §8 kill switches are the only brake once the loop is
-running. **Say this plainly when starting a loop**, and state the current counters
-(equity against the floor, loss streak, round trips) so the decision is informed rather
-than implied.
+A loop will keep running while the user is away, and **rev 8 can fire an entry with
+nobody watching — now in either direction.** That is the intended design — the venue
+holds the stop, not this session — but it means the §8 kill switches are the only brake
+once the loop is running. **Say this plainly when starting a loop**, and state the
+current counters (equity against the floor, loss streak, round trips) **and both arm
+states** so the decision is informed rather than implied.
+
+**Enabling the long side roughly doubles the number of RSI paths that reach a fill**,
+even though the long half may fire rarely in practice. A loop left running overnight is
+no longer exposed to one tail of the RSI distribution but to both.
 
 ## Anchors
 
@@ -348,3 +435,5 @@ than implied.
 | Background tabs | `McpPage.js` `emulateFocusedPage(true)` |
 | Why no JS eval | `--no-javascript-evaluation` is deliberate: the browser holds live wallets |
 | Cadence | §10 — `/loop 3m /lighter-market-loop <url>`; nothing else schedules this |
+| Arm state | `LOGFILE` rev-8 section — **two** arms, SHORT-ARM (RSI>70) and LONG-ARM (RSI<30) |
+| Entry directions | §6 — rev 8 fires **both** sides; one position at a time, no flips, `Reverse Position` banned |
