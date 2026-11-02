@@ -77,6 +77,11 @@ Pin id_effect ONCE, in `[workspace.dependencies]` of `rust/Cargo.toml`, and have
 members write `id_effect = { workspace = true }`. Types from two id_effect
 versions do not unify, so a split pin is a compile error waiting to happen.
 
+**Take id_effect with its default features; its dependency graph is not a design
+constraint** (user ruling, 2026-11-02). Do not propose `default-features = false`
+or feature-trimming leaves to keep crates out of the graph — the version policy
+above is the only id_effect dependency rule that matters here.
+
 **Known duplicate — the `Industrial/assay` family pins id_effect 0.4.0.**
 `nixdrv`, `nixfetch`, `nixq`, `nixstore` (and `assay` itself) all pin `0.4.0`
 exactly, so any in-tree crate depending on them resolves BOTH 0.4.0 and 0.13.0.
@@ -90,8 +95,11 @@ genuinely builds on `Effect` while also using the assay crates, migrate
 
 - New crate not added to `rust/Cargo.toml` members → cargo resolver errors.
   A member listed there that does NOT exist on disk is the same failure in
-  reverse (real case: a phantom `tools/skjold` member broke every
-  workspace-wide command until 2026-11-02).
+  reverse (real case 2026-11-02: a `members` entry naming a planned crate that
+  was never created broke every workspace-wide cargo command).
+- **Agent artifacts never go under `.cursor/`** (user ruling, 2026-11-02).
+  That submodule is no longer used for plans or any other agent output; plans
+  belong in `.maestro/plans/`. The former `.cursor/plans/` has been removed.
 - Standalone crate without the empty `[workspace]` table → attaches to a
   parent workspace and breaks buildRustPackage hashing.
 - A declared id_effect dep that the source never uses still forces a version
