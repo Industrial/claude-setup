@@ -32,3 +32,21 @@ logs/
 .env
 .env.local
 .env.*.local
+
+# Claude Code credentials — NEVER commit.
+#
+# This repo is public, and ~/.claude is a symlink into it (~/.claude ->
+# .dotfiles/.claude -> .claude-setup/.claude), so the live credential file the CLI
+# writes lands inside this working tree. It holds the Anthropic OAuth token for the
+# subscription login; committing it would publish an account credential, and `git
+# add -A` from this directory was the only thing standing between that and a push.
+#
+# Never tracked in this repo's history as of 2026-11-03 — verified with
+# `git log --all -- .claude/.credentials.json` (empty). Keep it that way.
+#
+# Both spellings are listed: the exact path the CLI uses today, and the bare
+# filename so a future relocation (a per-profile or nested data dir) is still
+# covered without anyone having to remember to come back here.
+.claude/.credentials.json
+.credentials.json
+**/.credentials.json
