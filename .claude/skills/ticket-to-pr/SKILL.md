@@ -6,16 +6,17 @@ name: ticket-to-pr
 # the repo it exists for. Left fully rostered; demote it from skills.manifest if
 # its description budget is ever needed.
 description: >-
-  Take one GitHub ticket all the way to a green PR without stopping for approval:
+  Take one GitHub ticket all the way to a merged PR without stopping for approval:
   ingest the issue body, comments and screenshots, diagnose it, plan it through
-  /skills + /quality + /id, self-approve and execute every part of the plan, branch
-  off staging, commit, push, open the PR, post a rundown comment linking the PR on
-  the ticket, then watch CI and fix until it is green. Use when handed an issue number,
-  an issue URL, or "work GH-1426", "take this ticket to a PR", "fix ticket 1234 end to end".
+  /skills + /quality + /id, self-approve and execute every part of the plan, cover it
+  with a regression test, branch off staging, commit, push, open the PR, post a rundown
+  comment linking the PR on the ticket, arm auto-merge, then watch CI and fix until it
+  is green and merged. Use when handed an issue number, an issue URL, or "work GH-1426",
+  "take this ticket to a PR", "fix ticket 1234 end to end".
 tags: [github, issues, delivery, ci, id-workflow, autonomous]
 ---
 
-# ticket-to-pr — one ticket, one green PR, no hand-holding
+# ticket-to-pr — one ticket, one merged PR, no hand-holding
 
 ## What invoking this skill means
 
@@ -104,8 +105,38 @@ it, and do not silently pick one.
 - `heavy`: `/plan-hierarchically`, mission + execution overlay, then continue.
 
 Every leaf needs: paths, acceptance criterion, and the gate that proves it. A leaf whose AC is
-"code looks right" is not a leaf. Include a test leaf — this repo expects a regression witness
-for a bug fix (see the `test(e2e): regression witness…` precedent in the log).
+"code looks right" is not a leaf.
+
+### The coverage leaf is mandatory
+
+A fix ships with a test that fails before it and passes after. This is not optional, and
+"the existing suite still passes" does not satisfy it — a regression nothing witnesses is a
+regression that comes back. Decide which of the three, in this order:
+
+1. **An existing e2e spec already walks this path** — extend it with the assertion the ticket
+   is about. Find out before writing anything new:
+
+   ```bash
+   ctx_search "<step id|field label|route>" apps/e2e-test/tests
+   ```
+
+   The step ids (`STP-LE-240`, `STP-IND-130`) and the `data-testid` the ticket's surface uses are
+   the terms that actually hit. Name the spec file in the plan.
+
+2. **No spec covers it, and the behaviour is reachable in the browser** — write one, under
+   `apps/e2e-test/tests/<feature>/`, following the neighbours. Read the `idclear-e2e-suite`
+   skill first: it carries the serial runner, the compose-stack prerequisite, and the env
+   pitfalls that make a locally-green spec fail in CI.
+
+3. **The behaviour is a unit of logic, not a journey** (a validator, a mapper, a risk
+   calculation) — a `bun test` unit beside the module is the honest witness, and an e2e for it
+   is waste. Say in the plan why you chose this over an e2e.
+
+Record the before/after in the evidence: the test failing against the unfixed code is the proof
+the witness works. If you cannot make it fail first, you have not understood the bug yet.
+
+Coverage changes the gate you run in Phase 3 — an e2e leaf needs the compose stack up, which is
+minutes, not seconds. Budget it rather than discovering it at push time.
 
 ## Phase 3 — Self-approve and execute (EXECUTE)
 
@@ -132,7 +163,7 @@ behaviour, not against your plan — the plan can be wrong in the same way the i
 Fan out `id-review-lens` (ac, correctness, scope, tests) when the diff is more than a couple of
 files. FAIL → back to EXECUTE with a concrete fix list. PASS → SHIP.
 
-## Phase 5 — Branch, commit, push, PR (SHIP)
+## Phase 5 — Branch, commit, push, PR, arm auto-merge (SHIP)
 
 `id-state.sh set SHIP`. Branch off `staging` — the default branch of `idclear/monorepo` is
 `staging`, never `main`:
@@ -164,6 +195,28 @@ gh pr create --base staging --title "fix(scope): summary (GH-<n>)" \
   --body-file .tmp/tickets/<n>/pr-body.md
 ```
 
+### Arm auto-merge
+
+Do this immediately after the PR exists, before the ticket comment — so the merge lands the
+moment the last required check goes green, rather than whenever you next look at it:
+
+```bash
+gh pr merge <pr> --auto --squash
+```
+
+`--squash` is this repo's shape: every merge in the log is one commit titled
+`type(scope): summary (GH-<n>) (#<pr>)`. Do not pass `--merge` or `--rebase` without a reason.
+
+Two refusals are normal and neither is a failure:
+
+- **"Auto-merge is not allowed for this repository"** — the setting is off org-side. Drop the
+  `--auto`; the Phase 7 watcher merges directly when it sees green. Say so in your report.
+- **"Pull request is in clean status"** — it is already mergeable *now*, so GitHub wants a plain
+  merge. Run `gh pr merge <pr> --squash` and confirm it landed.
+
+Never pass `--admin`. That bypasses branch protection, which is the one thing the protection is
+there to stop you doing.
+
 ## Phase 6 — Report back on the ticket
 
 Write `.tmp/tickets/<n>/ticket-comment.md` (`ctx_patch op=create`), then:
@@ -183,15 +236,37 @@ The rundown is for the reporter, who is not an engineer. Five parts, short:
 
 No task-tracker jargon, no mode names, no file paths beyond the ones that mean something to them.
 
-## Phase 7 — Watch until green
+## Phase 7 — Watch until merged
+
+Green is not the finish line. The job is done when the PR is **merged**, and a green PR sits
+unmerged for several ordinary reasons — behind its base, a required review missing, a conflict
+that appeared after you pushed, still a draft. The watcher tells those apart:
 
 ```bash
 bash .claude/skills/ticket-to-pr/scripts/watch-pr.sh <pr> --interval 30 --timeout-min 45
 ```
 
 Run it through `ctx_shell` with `run_in_background: true` and `timeout_ms: 3000000`, then poll
-with `background_action: "status"`. Exit codes: `0` green, `1` red (failing logs written to
-`.tmp/ci/pr-<pr>-run-<id>.log`), `2` timed out, `3` no checks ever registered.
+with `background_action: "status"`.
+
+| Exit | Meaning | What you do |
+|---|---|---|
+| `0` | **Merged** | Report and finish |
+| `1` | Red — failing logs in `.tmp/ci/pr-<pr>-run-<id>.log` | Triage below |
+| `2` | Timed out, still pending or still unmerged | Re-arm the watcher once; if it times out again, hand back |
+| `3` | No checks ever registered | Check the workflow actually triggers on this branch |
+| `4` | **Green but the merge is blocked** | Read the reason it printed — draft, conflict, changes requested, review required. All four are the human's, not yours |
+| `5` | PR closed without merging | Someone closed it. Stop and ask |
+
+By default the watcher also **merges**: when checks are green and nothing is blocking, it arms
+or performs the squash merge itself, and it runs `gh pr update-branch` at most twice if the PR
+is behind its base (which re-triggers CI — expected, not a fault). Flags: `--no-merge-wait`
+restores the old stop-at-green behaviour, `--merge-method merge|rebase` overrides the squash,
+`--no-update-branch` leaves a behind-base PR alone.
+
+Exit `4` on `REVIEW_REQUIRED` is the common one in this repo and it is **not** a failure: your
+work is done, auto-merge is armed, and the PR lands when a human approves. Report it that way
+rather than as a problem.
 
 On red:
 
@@ -207,8 +282,12 @@ Never get to green by weakening the check — no skipped test, no loosened asser
 `continue-on-error`, no gate downgrade. A green wall that stopped testing anything is worse than
 a red one.
 
-When it goes green, report: PR link, ticket link, what changed, what CI ran, and any assumption
-still awaiting the reporter's confirmation.
+When it merges, report: PR link, ticket link, what changed, what CI ran, the merge commit, and
+any assumption still awaiting the reporter's confirmation. If it stopped at exit `4`, report the
+same plus the one thing a human has to do — approve, resolve a conflict, mark it ready.
+
+Do not close the ticket yourself. The reporter closes it after retesting; several issues in this
+repo are deliberately left open on a shipped fix pending exactly that.
 
 ---
 
@@ -220,6 +299,11 @@ still awaiting the reporter's confirmation.
   unfilled template, but genuinely contradictory requirements across comments.
 - Three failed CI rounds, or a failure that reproduces only in CI after two attempts.
 - The lane turns out to be `heavy` and the plan wants more than one PR.
+- The merge is blocked on something that is not yours: a conflict you cannot resolve without
+  guessing at someone else's intent, changes requested by a reviewer, or a required approval.
+  Watcher exit `4`. Arming auto-merge and reporting is the whole of your job there.
+- You cannot write a test that fails before the fix. That means the diagnosis is wrong, not that
+  the coverage leaf is optional.
 
 Everything short of those: decide, state the assumption, keep going.
 
@@ -234,6 +318,12 @@ Everything short of those: decide, state the assumption, keep going.
 | PR opened against `main` | assumed GitHub's usual default | `--base staging`, always |
 | `gh pr checks` exits 8 | checks still pending, not a failure | keep watching; that is what the script does |
 | Attachment row says `DOWNLOAD-FAILED` | link expired or the asset needs a session cookie | ask the reporter to re-attach; do not guess the content |
+| `Auto-merge is not allowed for this repository` | the org setting is off | drop `--auto`; the watcher merges on green. Not a failure |
+| `Pull request is in clean status` | it is mergeable right now, so `--auto` is refused | `gh pr merge <pr> --squash` |
+| Watcher sits at `waiting for the merge to land…` | auto-merge armed but a required check is not in the branch-protection set, or an approval is missing | `gh pr view <pr> --json mergeStateStatus,reviewDecision`; exit `4` is the honest answer |
+| PR green, watcher exits `4` with `REVIEW_REQUIRED` | branch protection wants a human | nothing to fix — report it and stop |
+| Watcher merged a PR you did not expect | you pointed it at a green PR without `--no-merge-wait` | it merges by design; use `--no-merge-wait` to observe only |
+| E2E spec green locally, red in CI | compose stack or env parity | `idclear-e2e-suite` skill — it lists the known pitfalls |
 
 ## See also
 
@@ -241,4 +331,5 @@ Everything short of those: decide, state the assumption, keep going.
 - `.claude/skills/id-workflow/SKILL.md`, `.claude/skills/maestro/SKILL.md`
 - `.claude/skills/plan-hierarchically/SKILL.md` — Phase 2 on the `heavy` lane
 - `.claude/skills/pre-push-ci/SKILL.md` — the gate Phase 5 runs
+- `idclear-e2e-suite` skill — the runner and env pitfalls behind the Phase 2 coverage leaf
 - `.claude/README.md` — every hook quoted above, with its escape hatch
