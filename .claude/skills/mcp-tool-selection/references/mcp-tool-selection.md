@@ -7,17 +7,28 @@ used with Hermes Agent. Load the mcp-tool-selection skill at session start to ap
 
 | Priority | Server      | Purpose                      | When to use                                                       |
 |----------|-------------|------------------------------|--------------------------------------------------------------------|
-| 1        | roam-code   | Codebase navigation            | Finding call sites, tracing symbols, mapping dependencies BEFORE editing |
-| 2        | context7    | Library docs lookup            | Current API docs for third-party libraries; do not rely on training data |
-| 3        | lean-ctx    | Context compression            | After large roam/serena outputs, long sessions approaching context limit |
-| 4        | serena      | Semantic code editing          | Renaming symbols, moving code, structural edits — prefer over text find/replace |
+| 1        | roam-code   | Codebase navigation and understanding | Finding call sites, tracing symbols, mapping dependencies — ALWAYS before reading or editing |
+| 2        | lean-ctx    | File reads and all file writes  | `ctx_read` to read, `ctx_patch` to write; never a native `Edit`/`Write` |
+| 3        | context7    | Library docs lookup            | Current API docs for third-party libraries; do not rely on training data |
+| 4        | searxng     | Web search                     | Anything not in this repository and not a library's docs |
+
+Serena held priority 4 and is removed. Its structural edits are `ctx_patch`'s
+(`op="replace_symbol"` renames a function or type in place), and the
+navigation it offered is roam-code's, without the language server.
 
 ## Tool Selection Rules
 
-- Always run **roam-code preflight** before making any structural change with **serena**
+- Always **understand with roam-code first** — `roam_context` to orient,
+  `roam_preflight` before a structural change. Never open with a grep.
+- Always **write with lean-ctx `ctx_patch`** — `op="replace_unique"` for an
+  exact snippet (no prior read needed), `op="create"` for a new file,
+  `op="replace_symbol"` for a named function or type, `ops: [...]` to batch
+  several files atomically. Never a native `Edit` or `Write`.
+- Read with **`ctx_read`**, at `signatures`/`map` for context and `full` only
+  for files about to be edited
 - Use **context7** when the task involves third-party APIs (e.g., Python library functions, npm packages)
-- Compress with **lean-ctx** when intermediate output exceeds ~50% of context budget
-- **serena edit tools** are for write-time only — do not use `execute_shell_command` as a write substitute
+- Do not use a shell redirect or `sed -i` as a write substitute — that is what
+  `ctx_patch` is for, and `ctx_shell` refuses `>` anyway
 
 ## Fallback Behavior
 

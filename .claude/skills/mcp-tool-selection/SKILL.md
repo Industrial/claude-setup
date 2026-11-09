@@ -10,15 +10,18 @@ description: |
 
 | Priority | Server      | Purpose                      |
 |----------|-------------|------------------------------|
-| 1        | roam-code   | Codebase navigation          |
-| 2        | context7    | Library docs lookup          |
-| 3        | lean-ctx    | Context compression          |
-| 4        | serena      | Semantic code editing        |
-| 5        | searxng     | Web search via self-hosted SearXNG |
+| 1        | roam-code   | Codebase navigation and understanding — **always first** |
+| 2        | lean-ctx    | File reads and **all file writes** (`ctx_patch`) |
+| 3        | context7    | Library docs lookup          |
+| 4        | searxng     | Web search via self-hosted SearXNG |
+
+Serena was priority 4 ("semantic code editing") and is **removed**: its write
+ops are `ctx_patch`'s now, and its two rust-analyzer instances cost 1.6 GB for
+navigation roam-code does from a SQLite index.
 
 ## CLI Tools vs MCP Servers
 
-**MCP servers** register in `~/.hermes/config.yaml` under `mcp_servers` and run as long-lived daemon clients. Examples: `lean-ctx`, `roam-code`, `context7`, `serena`, `searxng`.
+**MCP servers** register in `~/.hermes/config.yaml` under `mcp_servers` and run as long-lived daemon clients. Examples: `lean-ctx`, `roam-code`, `context7`, `searxng`.
 
 **CLI tools** (e.g. `cargo`, `pytest`) are invoked per-task via `terminal()` — they have NO entry in `mcp_servers` regardless of capability.
 
@@ -36,14 +39,20 @@ Quick diagnosis table:
 | Entry in `mcp_servers` config | ✅ | ❌ |
 | Long-running daemon | ✅ | ❌ |
 | Exposes protocol tools | ✅ | ❌ |
-| Examples | `roam-code`, `serena`, `lean-ctx` | `cargo` |
+| Examples | `roam-code`, `lean-ctx`, `context7` | `cargo` |
 
 ## Usage Rules
-- Always run **roam-code** pre‑flight before making any structural edit with **serena**.
+- **Understand with roam-code before touching anything.** `roam_context` is
+  the orient step; `roam_preflight` before a structural edit. Never a grep.
+- **Write with lean-ctx's `ctx_patch`, never a native `Edit`/`Write`.**
+  `op="replace_unique"` needs no prior read; `op="create"` makes a new file;
+  `ops: [...]` batches across files atomically.
+- Read with `ctx_read`, choosing `signatures`/`map` for context and `full`
+  only for files you are about to edit.
 - Use **context7** when the task involves third‑party library APIs.
-- Compress large intermediate outputs with **lean‑ctx** when the context budget exceeds ~50%.
-- **serena** tools are write‑only; do not replace them with `execute_shell_command`.
 - Use **searxng** for web search tasks when available.
+- **No language server.** `rust-analyzer-lsp` is disabled; roam-code's index
+  answers the same questions for megabytes instead of gigabytes.
 
 ## Adding a New MCP Server to Hermes
 

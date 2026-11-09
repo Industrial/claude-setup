@@ -4,7 +4,7 @@
 		"gitkraken-hooks@gitkraken": true,
 		"id-workflow@idclear": true,
 		"pyright-lsp@claude-plugins-official": true,
-		"rust-analyzer-lsp@claude-plugins-official": true,
+		"rust-analyzer-lsp@claude-plugins-official": false,
 		"typescript-lsp@claude-plugins-official": true
 	},
 	"extraKnownMarketplaces": {

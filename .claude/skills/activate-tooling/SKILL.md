@@ -12,5 +12,5 @@ Checklist (from `.cursor/commands/activate.md`):
 2. **Roam:** `devenv shell -- roam health` to verify codebase index.
 3. **Maestro:** `devenv shell -- maestro status --json` (missions/tasks).
 4. **GitHub CLI:** use `gh` for GitHub operations when needed.
-5. Verify MCP servers from `.cursor/mcp.json` (lean-ctx, roam, maestro, searxng, serena).
+5. Verify MCP servers from `.cursor/mcp.json` (roam-code, lean-ctx, maestro, searxng, context7). Serena is removed — do not expect it, and do not re-add it.
 6. If a server is down, see the `mcp-debug` skill.
