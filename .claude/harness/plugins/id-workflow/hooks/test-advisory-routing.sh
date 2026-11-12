@@ -13,6 +13,9 @@
 #   4. Expensive-by-construction Bash is still DENIED.
 #   5. git branch deletion is DENIED even with the escape hatch set.
 #   6. CLAUDE_ALLOW_NATIVE_TOOLS=1 silences routing but not the safety rule.
+#   7. The large-file guard (2c) fires on unbounded dumps and ONLY on those —
+#      added 2026-11-12 with the rewrite of that section; see guard-bash.sh for
+#      the three false positives that motivated it.
 #
 # Usage: bash test-advisory-routing.sh
 # Exit 0 = all pass. Exit 1 = at least one failure (names printed).
@@ -20,6 +23,22 @@ set -uo pipefail
 cd "$(dirname "$0")"
 
 pass=0; fail=0
+
+# The hook reads .cwd to decide whether the devenv wrap applies. Without it
+# section 3 is skipped entirely and the devenv cases below pass as "allow" —
+# which is how this suite came to report two spurious failures. Walk up to the
+# nearest devenv.nix and pass that as the session cwd.
+repo_root="$(while [ ! -f devenv.nix ] && [ "$PWD" != / ]; do cd ..; done; pwd)"
+[ -f "$repo_root/devenv.nix" ] || printf 'warn: no devenv.nix above %s; devenv cases will fail\n' "$PWD"
+
+# Fixtures for the large-file guard.
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+big="$tmpdir/big.log"
+small="$tmpdir/small.log"
+dd if=/dev/zero bs=1024 count=128 2>/dev/null | base64 > "$big"
+printf 'one line\n' > "$small"
+catbin="$(command -v cat)"
 
 decide() { # <script> <json> -> "allow" | "deny" | "SILENT"
     local out
@@ -41,7 +60,8 @@ tool() { # <label> <toolname> <expected>
 }
 
 cmd() { # <label> <command> <expected>
-    local json; json="$(jq -nc --arg c "$2" '{tool_name:"Bash",tool_input:{command:$c}}')"
+    local json; json="$(jq -nc --arg c "$2" --arg d "$repo_root" \
+        '{tool_name:"Bash",cwd:$d,tool_input:{command:$c}}')"
     check "$1" "$3" "$(decide guard-bash.sh "$json")"
 }
 
@@ -67,6 +87,29 @@ cmd "unbounded recursive grep" 'grep -r foo .'                     deny
 cmd "unbounded rg"             'rg -r foo .'                       deny
 cmd "depth-unbounded find"     'find . -name SKILL.md'             deny
 
+echo "large-file dumps: refuse only the unbounded ones"
+cmd "cat bigfile"              "cat $big"                          deny
+cmd "cat bigfile | grep"       "cat $big | grep x"                 deny
+cmd "cat by absolute path"     "$catbin $big"                      deny
+cmd "cat < bigfile"            "cat < $big"                        deny
+cmd "cat after &&"             "git status && cat $big"            deny
+cmd "head -n huge"             "head -n 999999 $big"               deny
+cmd "head -c over byte cap"    "head -c 200000 $big"               deny
+cmd "tail -n +1 (whole file)"  "tail -n +1 $big"                   deny
+
+echo "large-file guard: must NOT fire on bounded or unrelated reads"
+cmd "bounded tail"             "tail -12 $big"                     allow
+cmd "bounded head"             "head -20 $big"                     allow
+cmd "head -c under byte cap"   "head -c 400 $big"                  allow
+cmd "cat of a small file"      "cat $small"                        allow
+cmd "bigfile is redirect target" "echo hi > $big; tail -2 /dev/null" allow
+cmd "bigfile named, no dumper" "ls -la $big"                       allow
+cmd "grep bigfile | tail"      "grep -c x $big | tail -1"          allow
+cmd "push then bounded tail"   "git push origin main > $big 2>&1; echo rc=\$?; tail -12 $big" allow
+cmd "heredoc merely names it"  "sed -n 1,2p <<EOF | tail -3
+mentions $big but reads nothing
+EOF"                                                               allow
+
 echo "devenv requirement (toolchain only)"
 cmd "bare pytest"              'pytest -q'                         deny
 cmd "bare moon"                'moon run :test'                    deny
@@ -82,6 +125,7 @@ export CLAUDE_ALLOW_NATIVE_TOOLS=1
 tool "Read silent under hatch"     Read   SILENT
 cmd "ls silent under hatch"        'ls -la'                        SILENT
 cmd "grep -r allowed under hatch"  'grep -r foo .'                 SILENT
+cmd "cat bigfile under hatch"      "cat $big"                      SILENT
 cmd "branch delete STILL denied"   'git branch -D feature'         deny
 unset CLAUDE_ALLOW_NATIVE_TOOLS
 

@@ -72,17 +72,141 @@ if [ "${CLAUDE_ALLOW_NATIVE_TOOLS:-0}" != "1" ]; then
         deny "Unbounded 'find' refused: on this repo it returns thousands of paths and gets spilled to an archive, costing a round trip. Use ctx_glob(pattern=\"**/NAME\") or ctx_tree(path=..., depth=N), or add -maxdepth.${HATCH}"
     fi
 
-    # 2c. Dumping a large file. Threshold is deliberately generous; the point is
-    #     to catch `cat <bigfile>`, not to police small reads.
-    for tok in $command; do
-        case "$tok" in
-            -*|*'*'*|*'?'*) continue ;;
-        esac
-        if printf '%s' "$command" | grep -Eq "(^|[;|&[:space:]])(cat|head|tail)[[:space:]]" \
-            && [ -f "$tok" ] && [ "$(wc -c < "$tok" 2>/dev/null || echo 0)" -gt 65536 ]; then
-            deny "Refusing to dump '$tok' ($(( $(wc -c < "$tok") / 1024 )) KB) into context. Use ctx_read(path=\"$tok\", mode=\"signatures\") for the API surface, mode=\"map\" for structure, or mode=\"lines:N-M\" for a window.${HATCH}"
-        fi
-    done
+# 2c. Dumping a large file into context.
+#
+# Rewritten 2026-11-12 after a peer session lost ~15 minutes and filed a
+# confidently wrong report off the back of this check. The old test asked
+# whether the words cat/head/tail appeared ANYWHERE in the command, then
+# denied if ANY whitespace-split token was a >64KB file. The two halves were
+# never correlated, so the big file did not have to be an argument of
+# anything. Three distinct failures came out of that:
+#
+#   (a) A heredoc body that merely MENTIONED a 1 MB path was tokenised, so
+#       `... <<PY ... PY | tail -3` was refused for a command that read no
+#       file at all. Heredoc bodies are data, not arguments — they are
+#       stripped before tokenising now.
+#
+#   (b) `git push origin main > .tmp/push.log 2>&1; ...; tail -12 .tmp/push.log`
+#       was refused IN FULL because .tmp/push.log already existed at 274 KB
+#       from an earlier run. The push never happened, but the wording read as
+#       a read refusal, so the session went on to diagnose a day-old log in
+#       detail. Hence: redirect targets are writes, not reads, and the deny
+#       text now says outright that nothing ran.
+#
+#   (c) `tail -12` on a 274 KB file was treated as a dump. head and tail are
+#       bounded by construction — they default to 10 lines. They are refused
+#       only when the count asked for is itself unbounded (a huge -n/-c, or
+#       `tail -n +N` / `head -n -N`, which both mean "the rest of the file").
+#
+# A basename comparison also closes a false negative the old regex had:
+# `/usr/bin/cat bigfile` was allowed, because the pattern wanted cat at a
+# word boundary.
+#
+# Thresholds stay generous. The point is to catch `cat <bigfile>`, not to
+# police small reads.
+
+DUMP_SIZE_CAP=65536   # file size above which an unbounded read is refused
+DUMP_LINE_CAP=5000    # -n above this is not a window any more
+DUMP_BYTE_CAP=65536   # -c above this is not a window any more
+
+# Does an explicit count ask for effectively the whole file?
+# $1 = value as written, $2 = cap, $3 = which dumper. 0 = unbounded.
+dump_count_unbounded() {
+    local val="$1" cap="$2" who="$3" n mult=1
+    case "$val" in
+        +*) [ "$who" = tail ] && return 0 || return 1 ;;
+        -*) [ "$who" = head ] && return 0 || return 1 ;;
+    esac
+    case "$val" in
+        *[gGmM]|*[gGmM]B) return 0 ;;
+        *[kK]|*[kK]B) mult=1024 ;;
+    esac
+    n="${val%%[!0-9]*}"
+    [ -n "$n" ] || return 1
+    [ "$(( n * mult ))" -gt "$cap" ] && return 0
+    return 1
+}
+
+# Heredoc bodies are data. Drop them before anything is tokenised.
+dump_scan="$(printf '%s\n' "$command" | awk '
+        BEGIN { delim = "" }
+        {
+            if (delim != "") {
+                line = $0
+                sub(/^[ \t]+/, "", line)
+                if (line == delim) { delim = "" }
+                next
+            }
+            if (match($0, /<<-?[ \t]*[\042\047]?[A-Za-z_][A-Za-z0-9_]*[\042\047]?/)) {
+                tag = substr($0, RSTART, RLENGTH)
+                sub(/^<<-?[ \t]*/, "", tag)
+                gsub(/[\042\047]/, "", tag)
+                delim = tag
+            }
+            print
+        }')"
+
+    # Walk segment by segment. A file counts only as the argument of a dumping
+    # command in the same segment, so `grep x big | tail -3` reads big through
+    # grep (bounded output) and tail never sees a file at all.
+    set -f
+    while IFS= read -r dump_seg || [ -n "$dump_seg" ]; do
+        [ -z "$dump_seg" ] && continue
+        dumper=""; dump_unbounded=0; dump_cap=0; dump_skip=0
+        for tok in $dump_seg; do
+            # trailing separators survive the split on ; | &
+            tok="${tok%%[;|&]}"
+            [ -z "$tok" ] && continue
+
+            if [ "$dump_skip" = 1 ]; then dump_skip=0; continue; fi
+
+            # a count whose flag came as a separate token (-n 50 / -c 1M)
+            if [ "$dump_cap" != 0 ]; then
+                dump_count_unbounded "$tok" "$dump_cap" "$dumper" && dump_unbounded=1
+                dump_cap=0
+                continue
+            fi
+
+            # Output redirections: the target is written, never read.
+            case "$tok" in
+                '>'|'>>'|'1>'|'1>>'|'2>'|'2>>'|'&>'|'&>>'|'>|') dump_skip=1; continue ;;
+                '>'*|'1>'*|'2>'*|'&>'*) continue ;;
+            esac
+            # Input redirections DO read: `cat < bigfile` is a dump.
+            case "$tok" in
+                '<<'*) continue ;;
+                '<') continue ;;
+                '<'*) tok="${tok#<}" ;;
+            esac
+
+            case "${tok##*/}" in
+                cat)       dumper=cat; dump_unbounded=1; continue ;;
+                head|tail) dumper="${tok##*/}"; dump_unbounded=0; continue ;;
+            esac
+
+            [ -n "$dumper" ] || continue
+
+            case "$tok" in
+                -n|--lines) dump_cap="$DUMP_LINE_CAP"; continue ;;
+                -c|--bytes) dump_cap="$DUMP_BYTE_CAP"; continue ;;
+                --lines=*)  dump_count_unbounded "${tok#*=}" "$DUMP_LINE_CAP" "$dumper" && dump_unbounded=1; continue ;;
+                --bytes=*)  dump_count_unbounded "${tok#*=}" "$DUMP_BYTE_CAP" "$dumper" && dump_unbounded=1; continue ;;
+                -n*)        dump_count_unbounded "${tok#??}" "$DUMP_LINE_CAP" "$dumper" && dump_unbounded=1; continue ;;
+                -c*)        dump_count_unbounded "${tok#??}" "$DUMP_BYTE_CAP" "$dumper" && dump_unbounded=1; continue ;;
+                -[0-9]*)    dump_count_unbounded "${tok#-}"  "$DUMP_LINE_CAP" "$dumper" && dump_unbounded=1; continue ;;
+                -*)         continue ;;
+            esac
+
+            [ "$dump_unbounded" = 1 ] || continue
+            [ -f "$tok" ] || continue
+            dump_size="$(wc -c < "$tok" 2>/dev/null || echo 0)"
+            if [ "$dump_size" -gt "$DUMP_SIZE_CAP" ]; then
+                set +f
+                deny "Nothing ran — this command was refused before execution, so any side effect it also had (a push, a build, a redirect) did NOT happen. It would dump '$tok' ($(( dump_size / 1024 )) KB) into context via '$dumper'. Use ctx_read(path=\"$tok\", mode=\"signatures\") for the API surface, mode=\"map\" for structure, or mode=\"lines:N-M\" for a window; a bounded 'head -20' / 'tail -50' is allowed.${HATCH}"
+            fi
+        done
+    done <<< "$(printf '%s' "$dump_scan" | tr ';|&\n' '\n')"
+    set +f
 fi
 
 # ---- 3. devenv wrapping: toolchain commands, in devenv projects only ---------
