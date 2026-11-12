@@ -32,8 +32,17 @@ Start every code question with `roam_context`. Never with a grep.
 | `ctx_tree(path, depth)` / `ctx_glob(pattern)` | `ls` / `find` / `Glob` | Compact directory maps |
 | **`ctx_patch(...)`** | **`Edit` / `Write` / `StrReplace`** | **One call, no mandatory re-read, atomic cross-file batches** |
 
-**Writes go through `ctx_patch`. There is no native-edit exemption** — earlier
+**Writes go through `ctx_patch`. There is no general native-edit exemption** — earlier
 versions of this file said edits stayed native, and that is withdrawn.
+
+**One exception, and only one: bypass-permissions sessions.** When the harness
+injects its bypass-mode instruction — "do your work through the Bash tool
+wherever it can accomplish the job … make file changes with sed, heredocs, or
+short scripts" — that arrives as a mid-conversation system turn and outranks
+this file. In that mode Bash writes are correct and expected; `ctx_patch` stays
+preferred wherever it is available and no less direct. Everywhere else the rule
+above holds with no exemption. Do not spend turns trying to satisfy both — see
+`rules/lean-ctx.md` for the full carve-out.
 
 - `op="replace_unique"` with `path`, `old_text`, `new_text` is the `Edit`
   replacement, and needs **no prior read**. Default to it.

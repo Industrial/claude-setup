@@ -17,9 +17,32 @@ CRITICAL: ALWAYS use lean-ctx tools instead of native equivalents, for reads
 
 ## Writes go through ctx_patch
 
-**There is no native-edit exemption.** Earlier versions of this rule said reads
+**There is no general native-edit exemption.** Earlier versions of this rule said reads
 were lean-ctx's and edits stayed native. That is withdrawn: `ctx_patch` is the
 write path for every file change.
+
+### The one exception: bypass-permissions mode
+
+The harness injects this into bypass-permissions sessions, mid-conversation:
+
+> Do your work through the Bash tool wherever it can accomplish the job: read
+> files with cat, head, or sed -n, search with grep and find, and make file
+> changes with sed, heredocs, or short scripts, rather than using the dedicated
+> Read, Edit, or Write tools.
+
+That is in direct opposition to the paragraph above, and it **wins**: a system
+turn delivered during the conversation outranks a static rule file. Recorded
+2026-11-12, after a session wrote an entire task through Bash heredocs while
+this rule insisted it must not, then reported the contradiction across sessions.
+
+So, explicitly: **in bypass-permissions mode, Bash writes — sed, heredocs, short
+scripts — are correct.** Prefer `ctx_patch` where it is available and no less
+direct, since it is still one call with no mandatory re-read and it still
+batches atomically. But do not treat a Bash write as a rule violation in that
+mode, do not route around the injected instruction, and do not burn turns trying
+to satisfy both at once.
+
+In every other mode the rule above holds with no exemption.
 
 Pick the op by what you know:
 
@@ -93,5 +116,6 @@ Fallback only if a lean-ctx tool is genuinely absent from the tool list — that
 is the MCP server being disconnected, not a reason to prefer native tools.
 
 REMINDER: Reads are `ctx_read`. Searches are `ctx_search`. **Writes are
-`ctx_patch`.** Never native `Edit` or `Write`.
+`ctx_patch`.** Never native `Edit` or `Write` — outside bypass-permissions mode,
+where Bash writes are correct; see "The one exception" above.
 <!-- /lean-ctx -->
