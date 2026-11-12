@@ -50,3 +50,37 @@ logs/
 .claude/.credentials.json
 .credentials.json
 **/.credentials.json
+
+# Claude Code session + runtime state — NEVER commit.
+#
+# Added 2026-11-12. Same reasoning as the credential block above, one class
+# wider. ~/.claude is a symlink into this repo, so everything the CLI writes at
+# runtime lands inside this working tree: full session transcripts, prompt
+# history, pasted content, debug logs and file-edit backups. This repo is
+# public. None of it has ever been committed — verified with
+# `git log --all -- .claude/projects` (empty) — and the only thing standing
+# between a transcript and a push was that nobody had run `git add -A` here yet.
+#
+# Transcripts are the sensitive one: they contain whatever was discussed,
+# including file contents, tokens pasted into a prompt, and paths from private
+# repositories.
+.claude/projects/
+.claude/sessions/
+.claude/history.jsonl
+.claude/paste-cache/
+.claude/file-history/
+.claude/shell-snapshots/
+.claude/debug/
+.claude/feedback/
+.claude/backups/
+.claude/todos/
+.claude/state/
+.claude/cache/
+.claude/telemetry/
+.claude/statsig/
+.claude/stats-cache.json
+.claude/.last-cleanup
+
+# Editor/tool leftovers that accumulate in this tree
+*.bak
+.claude/settings.json.bak
