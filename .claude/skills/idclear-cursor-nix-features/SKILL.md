@@ -1,40 +1,45 @@
 ---
 name: idclear-cursor-nix-features
 paths:
-  - ".cursor/nix/**"
+  - "nix/devenv-modules/**"
   - "**/devenv.nix"
   - "**/devenv.yaml"
 description: >-
-  Editing the shared devenv feature modules under `.cursor/nix/features/` for
+  Editing the shared devenv feature modules under `nix/devenv-modules/features/` for
   this monorepo — feature-flag pattern, mkDefault vs mkForce precedence,
   how per-hook / per-script options propagate into the auto-generated
   `pre-commit-config.json` (and other devenv artifacts), and how to find
   downstream option schemas in the cached nix store. Use when adding or
-  patching a `.cursor/nix/features/*.nix` module, debugging why a devenv
+  patching a `nix/devenv-modules/features/*.nix` module, debugging why a devenv
   consumer sees unexpected behaviour after a `git-hooks` / `git-hooks-prek`
   change, or wiring a new consumer repo against this facade.
 disable-model-invocation: true
 ---
 
-# idclear `.cursor/nix` feature modules
+# idclear `nix/devenv-modules` feature modules
 
 ## When to use
 
-- Editing a file under `.cursor/nix/features/*.nix` (e.g. to change a
+- Editing a file under `nix/devenv-modules/features/*.nix` (e.g. to change a
   pre-commit hook's `verbose` flag, default script body, or env vars).
-- Adding a new `.cursor/nix/features/<name>.nix` and the matching
+- Adding a new `nix/devenv-modules/features/<name>.nix` and the matching
   `<name>.assay.nix` claim suite.
-- Wiring a new consumer repo that imports `.cursor/nix` and wondering
-  which `cursor.features.*.enable = true` lines to flip.
+- Wiring a new consumer repo that imports `nix/devenv-modules` and wondering
+  which `local.features.*.enable = true` lines to flip.
 - Debugging why a `devenv up` regeneration produces a `pre-commit-config.json`
   (or other auto-generated artifact) with unexpected values — usually the
   field is silently being set to the default somewhere upstream.
 
 ## Layout
 
+These modules used to come from the shared `.cursor` submodule (option
+namespace `cursor.features.*`). They are now vendored into each repo under
+`nix/devenv-modules/`, with the namespace `local.features.*`. A repo's copy
+is its own: changes do not propagate to other repos.
+
 ```
-.cursor/nix/
-  default.nix / default.assay.nix     # top-level import: [../.cursor/nix ./devenv.nix]
+nix/devenv-modules/
+  default.nix / default.assay.nix     # module entry, imported from the root devenv.nix
   devenv.nix / devenv.yaml            # consumer-facing entrypoint
   lib/
     assay.nix                          # pinned Industrial/assay claim DSL
@@ -47,29 +52,29 @@ disable-model-invocation: true
 Each feature defaults to **off**. Consumer enables per-feature with:
 
 ```nix
-cursor.features.<name>.enable = true;
+local.features.<name>.enable = true;
 # optional override
-cursor.features.<name>.<option> = "value";
+local.features.<name>.<option> = "value";
 ```
 
 The facade is consumed from `devenv.nix` via:
 
 ```nix
-{ imports = [ ./.cursor/nix ]; }
+{ imports = [ ./nix/devenv-modules ]; }
 ```
 
 ## Editing a feature module — pattern
 
-`.cursor/nix/features/git-hooks-prek.nix` is the canonical worked example
+`nix/devenv-modules/features/git-hooks-prek.nix` is the canonical worked example
 (see `references/git-hooks-prek-verbose-fix.md` for the exact diff from
 this session). General shape:
 
 ```nix
 { lib, config, pkgs, ... }:
 let
-  cfg = config.cursor.features.<feature-name>;
+  cfg = config.local.features.<feature-name>;
 in {
-  options.cursor.features.<feature-name> = {
+  options.local.features.<feature-name> = {
     enable   = lib.mkEnableOption "...";
     # typed options specific to the feature
     optionX  = lib.mkOption { type = lib.types.str; default = "..."; };
@@ -103,7 +108,7 @@ example.
 Every `features/<name>.nix` has a co-located `features/<name>.assay.nix`
 that exercises the module's claims. Use `assay run <path>` to execute.
 Keep the suite in lockstep with module changes — the README at
-`.cursor/nix/README.md` is explicit about this.
+`nix/devenv-modules/README.md` is explicit about this.
 
 ## How auto-generated configs flow downstream
 
@@ -145,7 +150,7 @@ prek (and Python pre-commit) capture hook stdout/stderr by default and
 only print on failure. The `verbose = true` hook option forces
 output on success too. To turn it on across the hooks this repo wires:
 
-1. Open `.cursor/nix/features/git-hooks-prek.nix`.
+1. Open `nix/devenv-modules/features/git-hooks-prek.nix`.
 2. Add `verbose = true;` to each `hooks.<name> = { … }` block
    (typically `pre-commit` and `pre-push`; the `commit-msg` hook has no
    user-facing output to show so it's left at the default).
@@ -169,7 +174,7 @@ overwritten. Make the change in the feature module instead.
 
 This is a project-specific operational skill, not a heuristic match.
 Agents should not load it from description-matching; load only when the
-user explicitly references `.cursor/nix` features or `git-hooks-prek`
+user explicitly references `nix/devenv-modules` features or `git-hooks-prek`
 configuration.
 
 ### LeanCTX is locked to the repo root
@@ -193,63 +198,63 @@ to bound the walk. A full `find /` will hit the 5-minute timeout.
 ### Consumer-repo duplicate `nix/` facade = duplicate-option error at `devenv up`
 
 A consumer repo (this monorepo included, at one point) sometimes grows
-a parallel `nix/` directory shadowing `.cursor/nix/`:
+a parallel tree under `nix/` (outside `nix/devenv-modules/`) shadowing the modules:
 
-- `nix/default.nix` — `{imports = [../.cursor/nix ./devenv.nix];}`
-- `nix/devenv.yaml` — `imports: [../.cursor/nix]`
+- `nix/default.nix` — `{imports = [./devenv-modules ./devenv.nix];}`
+- `nix/devenv.yaml` — `imports: [./devenv-modules]`
 - `nix/devenv.nix` — barrel that re-imports `./features/program-*.nix`
 - `nix/features/<name>.nix` + `<name>.assay.nix` — byte-identical copies
-  of `.cursor/nix/features/<name>.nix`
+  of `nix/devenv-modules/features/<name>.nix`
 - `nix/features/hermes-agent/templates/{config.yaml,.env.example,SOUL.md}`
 - `nix/lib/{assay.nix,feature-eval.nix}` — passthrough re-exports
 
 This produces **duplicate-option errors** at `devenv up`:
 
 ```
-error: The option `cursor.features.program-hermes.enable' in
+error: The option `local.features.program-hermes.enable' in
 `/…/nix/features/program-hermes.nix' is already declared in
-`/…/.cursor/nix/features/program-hermes.nix'.
+`/…/nix/devenv-modules/features/program-hermes.nix'.
 ```
 
 Fix order (don't shortcut — each step depends on the last):
 
-1. **Diff the duplicates first** (`diff -rq nix/features/X .cursor/nix/features/X`
+1. **Diff the duplicates first** (`diff -rq nix/features/X nix/devenv-modules/features/X`
    per `X`). Most copies are byte-identical and safe to delete. Any
    with **local customisations** (e.g. extra MCP entries in
    `hermes-agent/templates/config.yaml`) need those changes ported
-   into `.cursor/nix/features/…` or reproduced in the parent
+   into `nix/devenv-modules/features/…` or reproduced in the parent
    `devenv.nix` — don't delete-and-lose a one-off tweak.
 2. **Drop the parent's `nix/devenv.nix` barrel** — it's a re-import
    list for files the facade already provides. After this, the
    facade's `nix/default.nix` becomes a one-line passthrough
-   (`{imports = [../.cursor/nix];}`); that passthrough can then also
+   (`{imports = [./devenv-modules];}`); that passthrough can then also
    go.
 3. **Delete the duplicated feature files** with `git rm` (after the
    diff in step 1 confirms they're identical). The orphaned
    `package.nix` derivations under `nix/features/<name>/` go with them.
 4. **Re-point every template path** that referenced `nix/features/…`
-   to `.cursor/nix/features/…`:
+   to `nix/devenv-modules/features/…`:
    - `devenv.nix` `enterShell` block (the `.env`, `config.yaml`,
      `SOUL.md` seed copies).
    - `AGENTS.md` and any other doc that pointed readers at the old
      path.
-5. **Drop `cursor.features.<dead-feature>.enable = true;`** lines
+5. **Drop `local.features.<dead-feature>.enable = true;`** lines
    for features that lived in the parallel `nix/features/` but no
-   longer exist in `.cursor/nix/features/` (e.g. when the submodule
+   longer exist in `nix/devenv-modules/features/` (e.g. when the shared stack
    removed `program-serena` upstream, the parent's local
    `program-serena.nix` should also go — and so should its `enable`
    line in `devenv.nix`).
 6. **Replace `nix/moon.yml` with a `nix-test` task in the parent
-   `moon.yml`** that runs `assay run .cursor/nix`. Co-located assay
+   `moon.yml`** that runs `assay run nix/devenv-modules`. Co-located assay
    suites are still valuable as a regression-test surface; the parent
    doesn't need a separate sub-project (`library` moon layer) to host
    them. One task in the root `moon.yml` is enough.
 7. **Wire `nix-test` into the pre-push gate**
-   (`cursor.features.git-hooks-moon.prePushTargets`) so CI exercises
+   (`local.features.git-hooks-moon.prePushTargets`) so CI exercises
    the canonical feature stack on every push.
 
-End state: the parent has **zero** `.nix` files except `devenv.nix`;
-`.cursor/nix` is the only facade; a single `nix-test` task in the
+End state: the parent has **zero** `.nix` files outside `nix/devenv-modules/` except `devenv.nix`;
+`nix/devenv-modules` is the only facade; a single `nix-test` task in the
 parent `moon.yml` exercises it.
 
 See `references/parent-nix-facade-cleanup.md` for the exact `comm` /
@@ -258,8 +263,8 @@ and the 10-file diff this produced in this checkout.
 
 ## See also
 
-- `.cursor/nix/README.md` — module authoring rules + Enable API
-- `.cursor/nix/features/git-hooks-moon.nix` — the `soft` precedence pattern
-- `.cursor/nix/features/git-hooks-prek.nix` — the verbose-output pattern
+- `nix/devenv-modules/README.md` — module authoring rules + Enable API
+- `nix/devenv-modules/features/git-hooks-moon.nix` — the `soft` precedence pattern
+- `nix/devenv-modules/features/git-hooks-prek.nix` — the verbose-output pattern
 - `references/git-hooks-prek-verbose-fix.md` — session-specific transcript
-- `.cursor/skills/nixos/nix-and-flakes/` — Nix language reference
+- `.claude/skills/nix-and-flakes/` — Nix language reference

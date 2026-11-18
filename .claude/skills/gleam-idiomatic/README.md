@@ -21,10 +21,10 @@ The style guide (`references/style.md`) generalizes patterns from Dream Test's s
 
 ## Usage
 
-To use this skill in Cursor:
+To use this skill in Claude Code:
 
-1. Copy this repository (or the skill folder) to `.cursor/skills/gleam-idiomatic/` in your project or user directory.
-2. The skill will be automatically discovered by Cursor's agent system.
+1. Copy this repository (or the skill folder) to `.claude/skills/gleam-idiomatic/` in your project or `~/.claude/skills/gleam-idiomatic/` for your user.
+2. The skill will be automatically discovered by Claude Code's skill loader.
 3. The agent will load core references when working with Gleam code, and load library-specific references when the task requires them.
 
 ## Training Data Notice

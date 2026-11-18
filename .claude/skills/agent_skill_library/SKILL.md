@@ -805,7 +805,7 @@ name to `.claude/skills.manifest` and run
 
 | Skill | What it covers |
 |---|---|
-| `maestro-command-migration` | Migrate editor-specific slash command workflows (e.g., .cursor/commands) to Maestro missions and tasks. Use when replacing ad-hoc command files with Maestro's hierarchical planning, tracking, and v... |
+| `maestro-command-migration` | Migrate editor-specific slash command workflows (e.g., .claude/commands) to Maestro missions and tasks. Use when replacing ad-hoc command files with Maestro's hierarchical planning, tracking, and v... |
 
 ## `maestro-design_`
 

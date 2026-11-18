@@ -14,16 +14,15 @@ Create Maestro/spec/plan artifacts only (no implementation code).
 ## Deliverables
 - Maestro mission/spec files (`.maestro/specs/*.md`)
 - Maestro execution overlay (for heavy mode): `.maestro/missions/<slug>.execution.md`
-- Cursor plan file: `.cursor/plans/<slug>.plan.md`
-- Machine-readable plan-check sibling: `.cursor/plans/<slug>.plan-check.yaml`
+- Plan file: `.maestro/missions/<slug>.plan.md` (next to the execution overlay)
+- Machine-readable plan-check sibling: `.maestro/missions/<slug>.plan-check.yaml`
   (`maestro plan check` validates THIS file, never the human `.plan.md`;
   required keys `intendedFiles`, `proofSet: []`, `riskClass`). Contracts and
   their `dw-*` criterion ids exist only after `task claim`, so the actual
   plan-check invocation happens at wave-0 claim time, not during PLAN.
 
 ## Writes Allowed
-- `.maestro/**` (specs, missions, execution overlays)
-- `.cursor/plans/**` (plan documents)
+- `.maestro/**` (specs, missions, execution overlays, plan documents)
 - `history/<timestamp>-*.md` plan/ledger documents (established repo convention:
   the user asks for dated plan artifacts here, e.g. inventories + test plans)
 - Specification files only

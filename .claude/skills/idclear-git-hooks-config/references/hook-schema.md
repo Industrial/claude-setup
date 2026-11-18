@@ -53,7 +53,7 @@ modules/pre-commit.nix runCommand "pre-commit-config.json" (line 67)
 prek reads JSON, honors `"verbose": true`
 ```
 
-So an edit to `.cursor/nix/features/git-hooks-prek.nix` → `git-hooks.hooks.pre-commit.verbose = true` flows to prek **without any consumer-side glue** as long as the edit sits inside the import chain that devenv evaluates.
+So an edit to `nix/devenv-modules/features/git-hooks-prek.nix` → `git-hooks.hooks.pre-commit.verbose = true` flows to prek **without any consumer-side glue** as long as the edit sits inside the import chain that devenv evaluates.
 
 ## Pitfalls
 

@@ -15,7 +15,7 @@ Planning is the primary deliverable; implementation follows only after plan mate
 
 ## ID Workflow Integration
 When invoked via `/id` or `/id-plan`, this command serves as the PLAN-mode body of the ID Workflow.
-Obey `.cursor/commands/id-workflow/PROTOCOL.md` for mode declaration, write bans, and lane settings.
+Obey `.claude/id-workflow/PROTOCOL.md` for mode declaration, write bans, and lane settings.
 
 ## Core Principles
 
@@ -52,7 +52,7 @@ Read order after bootstrap:
 1. `.maestro/MAESTRO.md` → `.maestro/tasks/NOW.md` → active spec/mission
 2. `.maestro/policies/*.yaml` — risk, autopilot, sensitive-paths
 3. Existing `.maestro/missions/*.execution.md` — do not contradict wave tables
-4. `.cursor/plans/` → avoid duplicate plans
+4. `.maestro/missions/*.plan.md` → avoid duplicate plans
 
 If `maestro_handoff_list` returns envelopes for your tool (`to_agent` filter), run pickup protocol per `maestro-handoff` before planning.
 
@@ -180,7 +180,7 @@ Write `.maestro/missions/<slug>.execution.md` with a **wave table**:
 
 ### Phase 5 — Plan Document + Validation
 
-Write `.cursor/plans/<slug>.plan.md`:
+Write `.maestro/missions/<slug>.plan.md`:
 
 ```yaml
 ---
@@ -209,7 +209,7 @@ a `^---\n...\n^---\n` regex match before running any tool that parses it.
 #### Plan-check gate (CLI — no MCP tool)
 After the plan file exists and a task is materialized:
 ```
-devenv shell -- maestro plan check --task <tsk-id> --plan-file .cursor/plans/<slug>.plan.md
+devenv shell -- maestro plan check --task <tsk-id> --plan-file .maestro/missions/<slug>.plan.md
 ```
 
 Fix `scope-widens`, `missing-proof`, `risk-class-too-low` before presenting.

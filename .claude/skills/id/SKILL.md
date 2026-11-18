@@ -15,7 +15,7 @@ Start in **ORIENT** mode and follow the ID workflow protocol. This is the main e
 ## How It Works
 
 1. **Start in ORIENT**: Follow the ID workflow protocol:
-   - Load and obey `.cursor/commands/id-workflow/PROTOCOL.md`
+   - Load and obey `.claude/id-workflow/PROTOCOL.md`
    - Follow `id-workflow/modes/orient.md` and `checklists/orient-exit.md`
 
 2. **Declare every response**: Each response must start with:

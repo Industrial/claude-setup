@@ -1,11 +1,11 @@
 ---
 name: assay-run-tests
-description: Run Assay (Nix unit testing) suites. `assay` is on $PATH via devenv.nix (`cursor.features.program-assay.enable = true`). Use `assay run <path>` to execute, `assay discover <path>` to list claims, `assay laws` for property laws.
+description: Run Assay (Nix unit testing) suites. `assay` is on $PATH via devenv.nix (`local.features.program-assay.enable = true`). Use `assay run <path>` to execute, `assay discover <path>` to list claims, `assay laws` for property laws.
 ---
 
 # Run Assay unit tests
 
-Assay is the monorepo's Nix-based unit-testing tool. The `assay` binary is exposed via `devenv.nix` (`cursor.features.program-assay.enable = true`) and lives on `$PATH` once a devenv shell is active. No install step needed inside a shell.
+Assay is the monorepo's Nix-based unit-testing tool. The `assay` binary is exposed via `devenv.nix` (`local.features.program-assay.enable = true`) and lives on `$PATH` once a devenv shell is active. No install step needed inside a shell.
 
 ## Commands
 
@@ -34,12 +34,12 @@ Assay is the monorepo's Nix-based unit-testing tool. The `assay` binary is expos
 Adding a feature (e.g. provisioning a new CLI/MCP server via devenv) is a 5-step operation that must update **three** files in addition to the feature itself, or the barrel-level `devenv.assay.nix` and `default.assay.nix` will fail.
 
 1. `nix/features/<name>/package.nix` — the actual `stdenv.mkDerivation` / `buildPythonPackage` etc. Make sure `pname` matches the binary name the test will look for.
-2. `nix/features/program-<name>.nix` — devenv wrapper. Mirror `program-serena.nix` / `program-omniroute.nix` (enable option under `cursor.features.program-<name>`, register `[pkgs.callPackage ./<name>/package.nix {}]` under `packages` when enabled).
+2. `nix/features/program-<name>.nix` — devenv wrapper. Mirror `program-serena.nix` / `program-omniroute.nix` (enable option under `local.features.program-<name>`, register `[pkgs.callPackage ./<name>/package.nix {}]` under `packages` when enabled).
 3. `nix/features/program-<name>.assay.nix` — co-located. Two claims are the minimum: disabled state is empty, enabled state has the `pname` in `packages` (use `has`/`builtins.elem` on `packageNames`).
 4. `nix/devenv.nix` — add `./features/program-<name>.nix` to the `imports` list.
 5. `nix/devenv.assay.nix` AND `nix/default.assay.nix` — both list feature names explicitly and assert the count. Add `<name>` to the `expected`/`hermesFeatures` list and bump the `featureCount`/`hermesFeatureCount` literal. **Both files must change in the same patch**; updating only one leaves a count mismatch that the other test catches.
 
-Additionally, the root `devenv.nix` must set `cursor.features.program-<name>.enable = true;` next to the other `program-*` enables, otherwise the feature is wired but never provisioned. This step has no assay coverage — verify by reading the diff or by confirming the binary is on `$PATH` inside `devenv shell`.
+Additionally, the root `devenv.nix` must set `local.features.program-<name>.enable = true;` next to the other `program-*` enables, otherwise the feature is wired but never provisioned. This step has no assay coverage — verify by reading the diff or by confirming the binary is on `$PATH` inside `devenv shell`.
 
 After all five edits, `assay run nix/` should pass with exactly +2 new claims (the new `disabled` + `package` assertions). If the count of new claims is wrong, you skipped a barrel file.
 

@@ -29,7 +29,7 @@ ORIENT → RESEARCH → PLAN → EXECUTE → REVIEW → SHIP
 ## Hard Rails (Protocol Rules)
 
 1. **Declare mode every response:** first line `[ID:<MODE>]` then `lane:<tiny|normal|heavy>`
-2. **Write ban:** no code/config edits outside EXECUTE/SHIP. PLAN may write `.maestro/**`, `.cursor/plans/**`, specs only.
+2. **Write ban:** no code/config edits outside EXECUTE/SHIP. PLAN may write `.maestro/**` (plans: `.maestro/missions/<slug>.plan.md`), specs only.
 3. **Human gate:** do not enter EXECUTE until the user explicitly approves the plan.
 4. **Exit criteria:** satisfy mode checklist before advancing.
 5. **Quality floor:** correctness > brevity. Sharpen the ask.
@@ -140,13 +140,13 @@ duplicate near-name module disambiguation:
 `references/live-shared-checkout-execution.md`.
 
 Missing Maestro CLI/MCP is a deviation, not a blocker: write the plan artifact to a
-PLAN-allowed location (e.g. `.cursor/plans/**`), track waves with the session todo
+PLAN-allowed location (e.g. `.maestro/missions/<slug>.plan.md`), track waves with the session todo
 list, keep commits wave-sized, and state the deviation once in the plan plus each
 commit body so REVIEW/SHIP retain an audit trail.
 
 Same doctrine for BROKEN GATE TOOLS: a mandatory gate command failing for EVERY
-input is a tool bug, not an artifact bug (real case: `maestro plan check`
-rejecting ALL `.cursor/plans/*.plan.md` files — whole-file YAML multi-document
+input is a tool bug, not an artifact bug (real case: `maestro plan check` once
+rejected ALL the then-current `.cursor/plans/*.plan.md` files — whole-file YAML multi-document
 error at the frontmatter `---` close, repo-wide). Do NOT loop reformatting your
 artifacts to appease the parser. Escape: (1) prove pre-existing + orthogonal by
 running the gate once on a sibling mission's untouched plan file; (2) substitute

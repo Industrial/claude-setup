@@ -1,14 +1,14 @@
 ---
 name: devenv-submodule-handling
-description: Handle devenv environments when using git submodules (e.g., .cursor/setup) to avoid "not tracked by Git" errors.
+description: Handle devenv environments when using git submodules (e.g. a vendored `.claude-setup` or any submodule devenv imports from) to avoid "not tracked by Git" errors.
 ---
 
-Handle devenv environments when using git submodules (e.g., .cursor/setup) to avoid "not tracked by Git" errors.
+Handle devenv environments when using git submodules (e.g. a vendored `.claude-setup` or any submodule devenv imports from) to avoid "not tracked by Git" errors.
 
 ## Trigger
 When running `devenv shell` or other devenv commands and seeing errors like:
 ```
-error: Path '.cursor/nix/devenv.nix' in the repository "..."
+error: Path '<submodule>/devenv.nix' in the repository "..."
 is not tracked by Git.
 ```
 This occurs because devenv (via Nix) expects all source files to be git-tracked, but submodule contents appear as untracked files.
@@ -17,7 +17,7 @@ This occurs because devenv (via Nix) expects all source files to be git-tracked,
 1. **Ensure the submodule is properly initialized**
    ```bash
    git submodule update --init --recursive <submodule-path>
-   # Example: git submodule update --init --recursive .cursor
+   # Example: git submodule update --init --recursive .claude-setup
    ```
    Verify it is a gitlink: `git ls-files -s <submodule-path>` should show mode `160000`.
 

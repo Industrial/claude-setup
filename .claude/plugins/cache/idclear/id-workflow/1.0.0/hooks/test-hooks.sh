@@ -88,10 +88,10 @@ run_mode RESEARCH "libs/base/src/index.ts"           deny
 run_mode RESEARCH ".tmp/id/scratch.json"             allow
 run_mode PLAN     "src/foo.ts"                       deny
 run_mode PLAN     ".maestro/specs/x.md"              allow
-run_mode PLAN     ".cursor/plans/x.md"               allow
+run_mode PLAN     ".maestro/missions/x.plan.md"      allow
 run_mode REVIEW   "src/foo.ts"                       deny
 run_mode REVIEW   ".maestro/evidence/x.json"         allow
-run_mode REVIEW   ".cursor/plans/x.md"               deny
+run_mode REVIEW   "docs/plans/x.plan.md"             deny
 run_mode EXECUTE  "src/foo.ts"                       allow
 run_mode SHIP     "src/foo.ts"                       allow
 
@@ -253,66 +253,10 @@ rm -f "$gate_probe"
 rm -rf "$repo/.tmp/stop-gate"
 expect 0 "$(gate_exit '{}')" "no changed source files is a no-op"
 
-echo
-echo "sync-skills.sh — roster vs library"
-
-# Read-only: --check never mutates, so the suite cannot disturb the roster.
-sync_out="$(bash "$here/sync-skills.sh" --check 2>&1)"
-sync_rc=$?
-
-if [ "$sync_rc" -eq 0 ]; then
-    ok ".claude/skills matches the manifest (run sync-skills.sh if this fails)"
-else
-    bad ".claude/skills matches the manifest" "$(printf '%s' "$sync_out" | head -3)"
-fi
-
-if printf '%s' "$sync_out" | grep -q "manifest names no skill provides"; then
-    bad "every manifest entry resolves to a real skill" \
-        "$(printf '%s' "$sync_out" | sed -n '/manifest names/,+4p' | tail -4 | tr '\n' ' ')"
-else
-    ok "every manifest entry resolves to a real skill"
-fi
-
-lib="$repo/.claude/skills/skill-library/SKILL.md"
-if [ -f "$lib" ]; then
-    ok "skill-library index exists"
-else
-    bad "skill-library index exists" "not generated"
-fi
-
-# The whole point of the split: nothing may fall out of both tiers.
-roster_n="$(printf '%s' "$sync_out" | sed -n 's/.*sync: \([0-9]*\) on the roster.*/\1/p')"
-lib_n="$(printf '%s' "$sync_out" | sed -n 's/.*roster, \([0-9]*\) in the library.*/\1/p')"
-total_n="$(printf '%s' "$sync_out" | sed -n 's/.*library, \([0-9]*\) total.*/\1/p')"
-if [ -n "$total_n" ] && [ "$((roster_n + lib_n))" -eq "$total_n" ]; then
-    ok "roster ($roster_n) + library ($lib_n) accounts for every skill ($total_n)"
-else
-    bad "roster + library accounts for every skill" "$roster_n + $lib_n != ${total_n:-?}"
-fi
-
-rows="$(grep -c '^| `' "$lib" 2>/dev/null || echo 0)"
-if [ "$rows" -eq "${lib_n:-0}" ]; then
-    ok "index carries a row per archived skill ($rows)"
-else
-    bad "index carries a row per archived skill" "$rows rows for ${lib_n:-?} archived"
-fi
-
-if grep -q '(no description)' "$lib" 2>/dev/null; then
-    bad "every indexed skill has a description" "some rows fell back to (no description)"
-else
-    ok "every indexed skill has a description"
-fi
-
-dangling=""
-for entry in "$repo"/.claude/skills/*; do
-    [ -L "$entry" ] || continue
-    [ -f "$entry/SKILL.md" ] || dangling="$dangling $(basename "$entry")"
-done
-if [ -z "$dangling" ]; then
-    ok "every roster symlink resolves to a SKILL.md"
-else
-    bad "every roster symlink resolves to a SKILL.md" "dangling:$dangling"
-fi
+# Roster invariants are not tested here. There is no sync script any more: every
+# skill lives in .claude/skills/ and roster membership is a flag, set in
+# skills.manifest and mirrored by `skillOverrides` in settings.json. Keeping
+# those two files in agreement is payload maintenance, not an ID rail.
 
 echo
 echo "hooks.json — plugin wiring"

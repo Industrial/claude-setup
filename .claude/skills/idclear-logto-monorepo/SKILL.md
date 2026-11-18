@@ -5,7 +5,7 @@ description: idclear monorepo Logto integration — libs/logto Management API cl
 
 # idclear monorepo — Logto integration
 
-This repo uses **Logto** (not Clerk or Auth.js). Prefer skills in `.cursor/skills/logto/` over `.cursor/skills/nextjs/clerk-nextjs-skills` or `authjs-skills`.
+This repo uses **Logto** (not Clerk or Auth.js). Prefer the `logto-*` skills in `.claude/skills/` over `.claude/skills/clerk-nextjs-skills` or `authjs-skills`.
 
 ## Layout
 
@@ -75,4 +75,4 @@ Run `roam context <symbol>` before editing exported functions.
 
 ## MCP
 
-Logto OpenAPI MCP is configured at `https://openapi.logto.io/mcp` (see `.cursor/mcp.json` if enabled). Use for Management API endpoint details.
+Logto OpenAPI MCP is configured at `https://openapi.logto.io/mcp` (see `.mcp.json` if enabled). Use for Management API endpoint details.

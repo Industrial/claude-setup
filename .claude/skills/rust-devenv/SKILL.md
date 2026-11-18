@@ -11,16 +11,16 @@ description: >-
 
 Status-quo patterns from `~/Code/rust` workspaces and [devenv Rust docs](https://devenv.sh/languages/rust/). This repo is Python-first but shares Moon, prek, treefmt, and lean-ctx wiring — reuse the same shell discipline when Rust crates land here.
 
-## Shared modules (`.cursor/nix`)
+## Shared modules (`nix/devenv-modules`)
 
-Industrial shells compose enableable modules from this submodule:
+Industrial shells compose enableable modules vendored into each repo (formerly the `.cursor` submodule):
 
 ```nix
 { lib, ... }: {
-  imports = [ ./.cursor/nix ];
-  cursor.features.program-moon.enable = true;
-  cursor.features.languages-rust.enable = true;
-  # … see `.cursor/nix/README.md`
+  imports = [ ./nix/devenv-modules ];
+  local.features.program-moon.enable = true;
+  local.features.languages-rust.enable = true;
+  # … see `nix/devenv-modules/README.md`
   enterShell = lib.mkAfter ''# project-only hooks'';
 }
 ```
@@ -28,7 +28,7 @@ Industrial shells compose enableable modules from this submodule:
 - Layout: flat `features/` (`program-*` for pinned CLIs; packages/env/languages/hooks alongside).
 - Defaults are **off**; consumer root enables what it needs.
 - Env defaults use soft priority so devenv dotenv / `.env` wins on conflict.
-- Do **not** put project-brand labels in `.cursor/nix` paths or identifiers.
+- Do **not** put project-brand labels in `nix/devenv-modules` paths or identifiers.
 
 ## Before changing devenv
 
@@ -214,7 +214,7 @@ Member crates inherit via `^:test` / `^:clippy` deps. Set `language: rust` on ea
 
 ## Building Rust tools inside devenv.nix
 
-Pin CLI crates with `pkgs.rustPlatform.buildRustPackage` (lean-ctx via `.cursor/nix` features):
+Pin CLI crates with `pkgs.rustPlatform.buildRustPackage` (lean-ctx via `nix/devenv-modules` features):
 
 ```nix
 lean-ctx-pkg = pkgs.rustPlatform.buildRustPackage rec {

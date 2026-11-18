@@ -1,10 +1,10 @@
-Pick the right agent for the task from `.cursor/rules/agent-*.mdc`:
+Pick the right agent for the task from the id-workflow plugin agents (`harness/plugins/id-workflow/agents/*.md`):
 
-| Role | Rule | Typical ID mode |
+| Role | Agent | Typical ID mode |
 |------|------|-----------------|
-| Researcher | `agent-researcher.mdc` | ORIENT / RESEARCH |
-| Architect | `agent-architect.mdc` | PLAN |
-| Implementer | `agent-implementer.mdc` | EXECUTE |
-| Reviewer | `agent-reviewer.mdc` | REVIEW / SHIP |
+| Researcher | `id-workflow:id-researcher` | ORIENT / RESEARCH |
+| Architect | `id-workflow:id-architect` | PLAN |
+| Implementer | `id-workflow:id-implementer` | EXECUTE |
+| Reviewer | `id-workflow:id-reviewer` (+ `id-review-lens`) | REVIEW / SHIP |
 
-State which rule you load. Prefer `/id` so mode + agent stay aligned.
+State which agent you dispatch. Prefer `/id` so mode + agent stay aligned.

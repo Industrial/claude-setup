@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code port of .cursor/hooks/format-after-edit.sh.
+# Claude Code port of the former Cursor hook format-after-edit.sh.
 # Formats the files that were just edited. Upstream reads workspace_roots[0];
 # Claude Code supplies cwd instead.
 #

@@ -12,9 +12,9 @@ REV="ec53f593b967093433d96bf0c90708b9250bf865"     # <-- release commit (git rev
 TARBALL="/tmp/assay-v${V}.tar.gz"                  # pre-download: curl -sL <release-url> -o $TARBALL
 
 FILES=(
-  /data/Code/rust/test-loco-webapp/.cursor/nix/features/program-assay.nix
-  /data/Code/rust/solana-yield-optimizer/.cursor/nix/features/program-assay.nix
-  /data/Code/idclear/monorepo/.cursor/nix/features/program-assay.nix
+  /data/Code/rust/test-loco-webapp/nix/devenv-modules/features/program-assay.nix
+  /data/Code/rust/solana-yield-optimizer/nix/devenv-modules/features/program-assay.nix
+  /data/Code/idclear/monorepo/nix/devenv-modules/features/program-assay.nix
 )
 fail=0
 chk() { local label="$1"; shift; if "$@" >/dev/null 2>&1; then echo "PASS  $label"; else echo "FAIL  $label"; fail=1; fi; }
@@ -39,9 +39,9 @@ chk "devenv.lock diff is exactly one rev-line pair (no collateral input drift)" 
 
 echo "== functional (release binary via nix run tag) =="
 chk "test-loco-webapp 117/117" \
-  bash -c "cd /data/Code/rust/test-loco-webapp && nix run github:Industrial/assay/v${V} -- run .cursor/nix 2>&1 | tail -1 | grep -q '117/117 passed'"
+  bash -c "cd /data/Code/rust/test-loco-webapp && nix run github:Industrial/assay/v${V} -- run nix/devenv-modules 2>&1 | tail -1 | grep -q '117/117 passed'"
 chk "idclear/monorepo 138/138" \
-  bash -c "cd /data/Code/idclear/monorepo && nix run github:Industrial/assay/v${V} -- run .cursor/nix 2>&1 | tail -1 | grep -q '138/138 passed'"
+  bash -c "cd /data/Code/idclear/monorepo && nix run github:Industrial/assay/v${V} -- run nix/devenv-modules 2>&1 | tail -1 | grep -q '138/138 passed'"
 
 echo
 [ "$fail" -eq 0 ] && echo "RESULT: ALL CHECKS PASSED" || echo "RESULT: FAILURES PRESENT"

@@ -68,7 +68,7 @@ via match). Never print values into claims, messages, or snapshots — runner
 output renders actual/expected verbatim.
 
 ## Gap-Inventory Method
-1. `find` non-assay `*.nix` excluding `.git/`, `.cursor/`; sibling
+1. `find` non-assay `*.nix` excluding `.git/` (and vendored `nix/devenv-modules/` if suites live upstream); sibling
    `<stem>.assay.nix` existence check.
 2. FILTER TO GIT-TRACKED (`git ls-files --error-unmatch`) — devenv state dirs
    and nested runtime trees otherwise pollute results.

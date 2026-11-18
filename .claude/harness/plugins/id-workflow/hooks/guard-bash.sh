@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Claude Code guard for the Bash tool. Merges three upstream hooks:
 #   .hermes/hooks/block-git-branch-delete.sh  (SOUL.md hard rule)
-#   .cursor/hooks/block-native-shell.sh       (route shell through ctx_shell)
-#   .cursor/hooks/enforce-devenv.sh           (wrap commands in `devenv shell --`)
+#   block-native-shell.sh (former Cursor hook: route shell through ctx_shell)
+#   enforce-devenv.sh     (former Cursor hook: wrap toolchain commands in the devenv env)
 #
 # Order matters. The branch-delete guard is a safety rule, not a routing rule,
 # so it runs first and is NOT bypassable by CLAUDE_ALLOW_NATIVE_TOOLS.
@@ -230,10 +230,33 @@ fi
 # runs that repo's git-hooks task, and hooks that re-enter the shell recurse.
 # In .dotfiles on 2026-11-18 that reached 16+ concurrent `prek run -a` processes
 # and reverted 153 dirty files. Where the repo has the wrapper, suggest it.
+#
+# Accepted wrapped forms: `devenv shell -- …`, `bin/with-devenv …`,
+# `./bin/with-devenv …`, `.devenv/with-devenv …`, and an absolute path whose
+# first token ends in `/bin/with-devenv` (`/abs/repo/bin/with-devenv …`). Any
+# of these may follow one or more leading `cd <dir> && ` / `cd <dir>; `
+# prefixes, so `cd /abs/repo && bin/with-devenv …` is accepted too.
 trimmed="$(printf '%s' "$command" | sed 's/^[[:space:]]*//')"
-case "$trimmed" in
+wrap_rest="$trimmed"
+while :; do
+    case "$wrap_rest" in
+        cd[[:space:]]*)
+            wrap_next="$(printf '%s' "$wrap_rest" | sed -E "s/^cd[[:space:]]+(\"[^\"]*\"|'[^']*'|[^;&|[:space:]]+)[[:space:]]*(&&|;)[[:space:]]*//")"
+            [ "$wrap_next" = "$wrap_rest" ] && break
+            wrap_rest="$wrap_next"
+            ;;
+        *) break ;;
+    esac
+done
+case "$wrap_rest" in
     "devenv shell --"*|"bin/with-devenv "*|"./bin/with-devenv "*|".devenv/with-devenv "*) exit 0 ;;
 esac
+wrap_first="${wrap_rest%%[[:space:]]*}"
+if [ "$wrap_first" != "$wrap_rest" ]; then
+    case "$wrap_first" in
+        /*/bin/with-devenv) exit 0 ;;
+    esac
+fi
 
 hook_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty')"
 repo="${CLAUDE_PROJECT_DIR:-${hook_cwd:-$PWD}}"

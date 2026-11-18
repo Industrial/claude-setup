@@ -31,10 +31,10 @@ The header gain was:
   pkgs,
   ...}:
 let
-  cfg = config.cursor.features.program-maestro;
+  cfg = config.local.features.program-maestro;
   maestro = pkgs.callPackage ./maestro/package.nix {};
 in {
-  options.cursor.features.program-maestro.enable =
+  options.local.features.program-maestro.enable =
     lib.mkEnableOption "Maestro local-first agent harness CLI (spec-to-ship loop)";
 
   config = lib.mkIf cfg.enable {
@@ -54,7 +54,7 @@ let
   assay = import ../lib/assay.nix;
   h = import ../lib/feature-eval.nix {};
   off = h.feature ./program-maestro.nix {};
-  on = h.feature ./program-maestro.nix {cursor.features.program-maestro.enable = true;};
+  on = h.feature ./program-maestro.nix {local.features.program-maestro.enable = true;};
   has = name: names: builtins.elem name names;
 in
   assay.suite "program-maestro" {
@@ -103,7 +103,7 @@ hermesFeatures = [
 hermesFeatureCount = assay.eq (builtins.length (builtins.filter has hermesFeatures)) 6;  # was 5
 ```
 
-`default.assay.nix` ALSO has a `sharedSmoke` list of features that come from the shared `../.cursor/nix` import. Don't add new program features there — only the project-specific barrel lists grow.
+`default.assay.nix` ALSO has a `sharedSmoke` list of features that come from the vendored `nix/devenv-modules` stack (formerly the shared `.cursor` import). Don't add new program features there — only the project-specific barrel lists grow.
 
 ### Verification
 

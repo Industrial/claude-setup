@@ -30,17 +30,16 @@ mode_lc="$(printf '%s' "$mode" | tr '[:upper:]' '[:lower:]')"
 
 case "$mode" in
     ORIENT|RESEARCH) writes="nothing outside .tmp/" ;;
-    PLAN)            writes=".maestro/**, .cursor/plans/**, .tmp/** only" ;;
+    PLAN)            writes=".maestro/** (plans: .maestro/missions/<slug>.plan.md), .tmp/** only" ;;
     REVIEW)          writes=".maestro/**, .tmp/** only" ;;
     EXECUTE|SHIP)    writes="contract-scoped paths in the working tree" ;;
     *)               writes="unknown" ;;
 esac
 
-# The ID pack is shared with Cursor and Hermes, so a project that has it wins.
-# Projects without a .cursor/ checkout fall back to the copy vendored into the
-# payload — without it, a system-wide /id-* would name a playbook that is not
-# there.
-pack=".cursor/commands/id-workflow"
+# A project that carries its own copy of the ID pack (.claude/id-workflow/)
+# wins. Projects without one fall back to the copy vendored into the payload —
+# without it, a system-wide /id-* would name a playbook that is not there.
+pack=".claude/id-workflow"
 [ -d "$repo/$pack" ] || pack="$HOME/.claude/id-workflow"
 
 ctx="ID workflow is ENGAGED — this session is mid-pipeline.

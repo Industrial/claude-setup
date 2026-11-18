@@ -36,4 +36,4 @@ bugfix/ob-rus-address-residency-permit).
 - AGENTS.md in target repo mandated project-local skills
   (`activate-tooling`, `hermes-tool-routing-hooks`) that were absent from the
   global registry — fall back to reading the referenced docs directly
-  (e.g. `.cursor/skills/` external dir) rather than skipping the convention.
+  (e.g. the `.claude/skills/` dir) rather than skipping the convention.

@@ -66,7 +66,7 @@ When the user asks to "check skills for X" or "audit skills":
 | "We decided to do X on date Y" | `history/<date>-<slug>.md` or commit message |
 | "Step Z broke because of bug Q" | `post-mortem` skill output (one-shot, not a guide) |
 | "User prefers terse commit messages" | memory (durable user preference) |
-| "Add `cursor.features.foo.enable = true`" | `engineering/assay-run-tests` skill (reusable across any feature add) |
+| "Add `local.features.foo.enable = true`" | `engineering/assay-run-tests` skill (reusable across any feature add) |
 | "Our `…}:` rewrap happened because of treefmt vX.Y" | commit message, changelog — not a skill |
 
 ## Why this matters

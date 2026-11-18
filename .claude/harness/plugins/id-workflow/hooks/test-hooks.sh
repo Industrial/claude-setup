@@ -88,10 +88,10 @@ run_mode RESEARCH "libs/base/src/index.ts"           deny
 run_mode RESEARCH ".tmp/id/scratch.json"             allow
 run_mode PLAN     "src/foo.ts"                       deny
 run_mode PLAN     ".maestro/specs/x.md"              allow
-run_mode PLAN     ".cursor/plans/x.md"               allow
+run_mode PLAN     ".maestro/missions/x.plan.md"      allow
 run_mode REVIEW   "src/foo.ts"                       deny
 run_mode REVIEW   ".maestro/evidence/x.json"         allow
-run_mode REVIEW   ".cursor/plans/x.md"               deny
+run_mode REVIEW   "docs/plans/x.plan.md"             deny
 run_mode EXECUTE  "src/foo.ts"                       allow
 run_mode SHIP     "src/foo.ts"                       allow
 

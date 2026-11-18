@@ -97,9 +97,10 @@ genuinely builds on `Effect` while also using the assay crates, migrate
   A member listed there that does NOT exist on disk is the same failure in
   reverse (real case 2026-11-02: a `members` entry naming a planned crate that
   was never created broke every workspace-wide cargo command).
-- **Agent artifacts never go under `.cursor/`** (user ruling, 2026-11-02).
-  That submodule is no longer used for plans or any other agent output; plans
-  belong in `.maestro/plans/`. The former `.cursor/plans/` has been removed.
+- **Agent artifacts go under `.maestro/`** (user ruling, 2026-11-02, when the
+  old `.cursor` submodule stopped taking plans; it has since been removed from
+  every repo). Plans belong in `.maestro/missions/<slug>.plan.md`, next to the
+  execution overlay — not `.maestro/plans/`, which Maestro marks deprecated.
 - Standalone crate without the empty `[workspace]` table → attaches to a
   parent workspace and breaks buildRustPackage hashing.
 - A declared id_effect dep that the source never uses still forces a version

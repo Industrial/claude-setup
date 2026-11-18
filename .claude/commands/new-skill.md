@@ -1,6 +1,6 @@
-# New Skill — distill conversation knowledge into `.cursor/skills/<group>/`
+# New Skill — distill conversation knowledge into `.claude/skills/<group>/`
 
-Mine the **current conversation** (and any files or URLs it references) for durable agent knowledge that is **not yet covered** by this repo's skills. Research each gap thoroughly, then **extend an existing skill** or **author a new grouped skill** under `.cursor/skills/<group>/<skill-name>/`.
+Mine the **current conversation** (and any files or URLs it references) for durable agent knowledge that is **not yet covered** by this repo's skills. Research each gap thoroughly, then **extend an existing skill** or **author a new grouped skill** under `.claude/skills/<group>/<skill-name>/`.
 
 Planning and gap analysis are the primary deliverable until the user approves the skill plan (unless they explicitly asked for research + authoring in one pass).
 
@@ -8,15 +8,13 @@ Planning and gap analysis are the primary deliverable until the user approves th
 
 ## Skills (load before executing)
 
-Review `.cursor/skills/` and load these before starting:
+Review `.claude/skills/` and load these before starting:
 
 | Skill | Role in this command |
 |-------|----------------------|
-| `~/.cursor/skills-cursor/create-skill/SKILL.md` | SKILL.md structure, frontmatter, anti-patterns, verification checklist |
-| `.cursor/skills/concise-planning/SKILL.md` | Atomic steps, acceptance criteria per deliverable |
-| `.cursor/skills/continuous-improvement/SKILL.md` | When to fold lessons into existing docs vs new skills |
+| `.claude/skills/workflow-skill-creator/SKILL.md` | SKILL.md structure, frontmatter, anti-patterns, verification checklist |
 
-Do **not** create skills in `~/.cursor/skills-cursor/` — that directory is Cursor-internal.
+Do **not** create skills in an editor-internal directory — project skills live in `.claude/skills/` only.
 
 ---
 
@@ -36,8 +34,8 @@ Do **not** create skills in `~/.cursor/skills-cursor/` — that directory is Cur
 Map what already exists so you do not duplicate or fragment knowledge.
 
 ```bash
-# List all skills (group = parent directory under .cursor/skills/)
-find .cursor/skills -name 'SKILL.md' | sort
+# List all skills (group = parent directory under .claude/skills/)
+find .claude/skills -name 'SKILL.md' | sort
 ```
 
 For each `SKILL.md`, read at minimum:
@@ -100,7 +98,7 @@ Classify each surviving unit:
 **Grouping rules**
 
 - Place under an existing group when the skill is a specialization (`logto/`, `temporal/`, `react/`, `docker/`, `design/`, `playwright/`, `nextjs/`, `thinking/`, `linux/`)
-- Keep repo-wide cross-cutting skills at `.cursor/skills/<skill-name>/` only when no group fits (e.g. `effect.ts-fundamentals`, `git-pushing`)
+- Keep repo-wide cross-cutting skills at `.claude/skills/<skill-name>/` only when no group fits (e.g. `effect.ts-fundamentals`, `git-pushing`)
 - Name skills: lowercase, hyphens, max 64 chars, specific not generic (`idclear-logto-monorepo` not `auth-helper`)
 - Prefer **one skill per coherent workflow or subsystem**, not one skill per message
 
@@ -116,7 +114,7 @@ Output a **Skill Plan** (required before writing files):
 
 | # | Topic | Status | Target | Rationale |
 |---|-------|--------|--------|-----------|
-| 1 | … | extend / new / new group | `.cursor/skills/...` | … |
+| 1 | … | extend / new / new group | `.claude/skills/...` | … |
 
 ### Out of scope
 - [Items intentionally not turned into skills]
@@ -163,7 +161,7 @@ Capture in notes (not necessarily committed):
 Follow `create-skill` conventions. Default layout:
 
 ```
-.cursor/skills/<group>/<skill-name>/
+.claude/skills/<group>/<skill-name>/
 ├── SKILL.md              # Required — ≤500 lines, essential workflow + links
 ├── reference.md          # Optional — API tables, long examples
 ├── resources/            # Optional — playbooks (match sibling skills)
@@ -216,7 +214,7 @@ color: purple
 [Symptoms → cause → fix]
 
 ## See also
-- `.cursor/skills/<group>/<other>/SKILL.md`
+- `.claude/skills/<group>/<other>/SKILL.md`
 - Official: [link]
 ```
 
@@ -251,7 +249,7 @@ Before declaring done, run this checklist for **each** touched skill:
 
 ### Structure
 - [ ] File references one level deep from `SKILL.md`
-- [ ] `name` matches directory and is unique under `.cursor/skills/`
+- [ ] `name` matches directory and is unique under `.claude/skills/`
 - [ ] Group folder name is lowercase, domain-clear
 
 ### Discovery
@@ -264,10 +262,10 @@ Before declaring done, run this checklist for **each** touched skill:
 ## New skills report
 
 ### Created
-- `.cursor/skills/<group>/<name>/` — [one-line purpose]
+- `.claude/skills/<group>/<name>/` — [one-line purpose]
 
 ### Extended
-- `.cursor/skills/.../SKILL.md` — [what was added]
+- `.claude/skills/.../SKILL.md` — [what was added]
 
 ### Skipped (already covered)
 - [topic] → [existing skill]
@@ -286,7 +284,7 @@ Before declaring done, run this checklist for **each** touched skill:
 | Create a skill for every library mentioned once | Merge into group skill or extend `nextjs/` / `react/` parent |
 | Copy full vendor docs into `SKILL.md` | Distill invariants + link to Context7 / official docs |
 | Create `helper`, `utils`, `misc` skills | Name by workflow or subsystem |
-| Write skills in `~/.cursor/skills-cursor/` | Project skills in `.cursor/skills/` only |
+| Write skills in an editor-internal directory | Project skills in `.claude/skills/` only |
 | Contradict `AGENTS.md`, `CLAUDE.md`, or Maestro docs | Align or add "See also" to harness docs |
 | Paraphrase user verbatim requirements into skills | Use their exact wording for contractual/copy requirements only |
 
@@ -294,7 +292,7 @@ Before declaring done, run this checklist for **each** touched skill:
 
 ## Quick invocation summary
 
-1. Inventory `.cursor/skills/**/SKILL.md`
+1. Inventory `.claude/skills/**/SKILL.md`
 2. Extract knowledge units from the conversation
 3. Gap analysis → **Skill Plan** → user approval
 4. Research each gap (repo + Context7 + searxng)

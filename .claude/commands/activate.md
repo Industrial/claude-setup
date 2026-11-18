@@ -2,7 +2,7 @@
 2. **Roam:** Run `devenv shell -- roam health` to verify codebase index.
 3. **Maestro:** Run `devenv shell -- maestro status --json` (missions/tasks).
 4. **GitHub CLI:** Use the `gh` cli for GitHub when needed.
-5. Verify MCP servers from `.cursor/mcp.json`:
+5. Verify MCP servers from `.mcp.json`:
 
    **Always on:** lean-ctx · roam-code · context7 · searxng · github (official Docker image) · maestro
 

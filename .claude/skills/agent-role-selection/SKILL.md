@@ -6,13 +6,13 @@ description: >-
 
 # agent-role-selection
 
-From `.cursor/rules/agent-*.mdc`:
+From the id-workflow plugin agents (`harness/plugins/id-workflow/agents/*.md`):
 
-| Role | Rule | Typical ID mode |
+| Role | Agent | Typical ID mode |
 |------|------|-----------------|
-| Researcher | `agent-researcher.mdc` | ORIENT / RESEARCH |
-| Architect | `agent-architect.mdc` | PLAN |
-| Implementer | `agent-implementer.mdc` | EXECUTE |
-| Reviewer | `agent-reviewer.mdc` | REVIEW / SHIP |
+| Researcher | `id-workflow:id-researcher` | ORIENT / RESEARCH |
+| Architect | `id-workflow:id-architect` | PLAN |
+| Implementer | `id-workflow:id-implementer` | EXECUTE |
+| Reviewer | `id-workflow:id-reviewer` (+ `id-review-lens`) | REVIEW / SHIP |
 
-State which rule you load. Prefer the `id-workflow` skill so mode + agent stay aligned.
+State which agent you dispatch. Prefer the `id-workflow` skill so mode + agent stay aligned.

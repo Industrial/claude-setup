@@ -17,9 +17,9 @@ without asking you questions.
 
 ## Hard constraints
 
-- Follow `.cursor/commands/plan-hierarchically.md` for the plan body. Do not fork its content.
+- Follow `.claude/commands/plan-hierarchically.md` (the `/plan-hierarchically` command) for the plan body. Do not fork its content.
 - Maestro is the only tracker. No markdown TODO lists, no parallel story systems.
-- You may write `.maestro/**`, `.cursor/plans/**`, and `.tmp/**`. Application source is blocked by
+- You may write `.maestro/**` (plans live at `.maestro/missions/<slug>.plan.md`) and `.tmp/**`. Application source is blocked by
   `plugins/id-workflow/hooks/guard-id-mode.sh`. If you find yourself wanting to "just fix it", that is the signal
   that the plan is ready, not that the guard is wrong.
 

@@ -86,8 +86,8 @@ cd "$WT"
 `<slug>` is 2–5 kebab-case words from the issue title. The worktree is created under
 `.tmp/worktrees/gh-<n>` of the **current** checkout, on a new branch `<type>/gh-<n>-<slug>`
 off `origin/staging` (an existing branch for the ticket is reused). `open` also initialises
-the `.cursor` submodule — without it `devenv shell` fails with
-`./.cursor/nix/devenv.nix file does not exist`.
+any submodules. The devenv modules themselves are vendored under `nix/devenv-modules/`,
+so `devenv` no longer depends on a submodule checkout.
 
 Bootstrap once, from inside the worktree:
 
@@ -233,7 +233,7 @@ Everything in ticket-to-pr's list, plus:
 | Symptom | Cause | Fix |
 |---|---|---|
 | `gh: command not found` | outside devenv | `devenv shell -- bash $S/…` |
-| `devenv.nix file does not exist` in the worktree | `.cursor` submodule not initialised | `git -C "$WT" submodule update --init --recursive` (`open` does this) |
+| `devenv.nix file does not exist` in the worktree | worktree branch predates the vendored `nix/devenv-modules/`, or a submodule is not initialised | rebase onto current `origin/staging`; `git -C "$WT" submodule update --init --recursive` (`open` does this) |
 | Card jumped to Done on merge | PR said `Closes #n` | use `Refs #n`; move the card back to Staging after the deploy |
 | `move` exit 3 on In Progress / In Review | board has no such column | log it and carry on |
 | `watch-deploy` sits at "no deployment contains …" | poller skipped (deploy in flight) or timer stopped | `ssh targ@… systemctl status coolify-staging-poller.timer` — report, do not trigger deploys yourself |

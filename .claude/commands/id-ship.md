@@ -19,7 +19,7 @@ Read: `<id-pack>/modes/ship.md`, `checklists/ship-exit.md`.
    ```
    `/pre-push` is the lighter parity path.
 5. Emit a handoff envelope if the work continues elsewhere.
-6. If `.cursor` changed, update the parent submodule gitlink.
+6. If a submodule (e.g. `.claude-setup`) changed, update the parent submodule gitlink.
 
 ## Close out ID
 
@@ -37,9 +37,9 @@ will restore the mode there.
 - [ ] Maestro task shipped (or N/A for an untracked tiny)
 - [ ] Commits created where required
 - [ ] Push / PR done where required
-- [ ] Parent submodule gitlink updated if `.cursor` changed
+- [ ] Parent submodule gitlink updated if a submodule changed
 - [ ] ID state cleared or deliberately carried forward
 
 $ARGUMENTS
 
-`<id-pack>` is `.cursor/commands/id-workflow/` in a project that has the shared pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in a project with no `.cursor/` checkout.
+`<id-pack>` is `.claude/id-workflow/` in a project that carries its own copy of the pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in every project.

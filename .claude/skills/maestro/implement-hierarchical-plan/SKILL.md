@@ -3,7 +3,7 @@ name: implement-hierarchical-plan
 description: >-
   Executes Maestro-native hierarchical plans from plan-hierarchically with
   maximum parallelization — wave dispatch, MCP claim/verify/ship loop, and
-  multi-subagent orchestration. Use when implementing `.cursor/plans/*.plan.md`
+  multi-subagent orchestration. Use when implementing `.maestro/missions/*.plan.md`
   files that have maestro frontmatter, execution overlays, or when the user
   approves a plan and asks to execute, ship, or parallelize wave tasks.
 ---
@@ -27,7 +27,7 @@ Turn an approved [plan-hierarchically](../../commands/plan-hierarchically.md) ar
 
 Before claiming any task, confirm the plan has:
 
-- [ ] `.cursor/plans/<slug>.plan.md` with `maestro.mission_id` or `maestro.task_id`
+- [ ] `.maestro/missions/<slug>.plan.md` with `maestro.mission_id` or `maestro.task_id`
 - [ ] `.maestro/specs/<slug>.md` (validated)
 - [ ] Heavy mode: `.maestro/missions/<slug>.execution.md` with wave table
 - [ ] `maestro plan check` PASS recorded (or run it now)
@@ -64,7 +64,7 @@ If handoff envelopes exist → `maestro_handoff_show` → `maestro_handoff_picku
 Read order:
 
 1. `.maestro/MAESTRO.md` → `.maestro/tasks/NOW.md`
-2. Plan file: `.cursor/plans/<slug>.plan.md`
+2. Plan file: `.maestro/missions/<slug>.plan.md`
 3. Execution overlay: `.maestro/missions/<slug>.execution.md`
 4. Active spec: path from plan frontmatter
 
@@ -93,7 +93,7 @@ Each subagent prompt MUST include:
 ```
 Task: <tsk-id> (<leaf-slug>)
 Spec: .maestro/specs/<slug>.md
-Plan leaf: .cursor/plans/<slug>.plan.md#<leaf-slug>
+Plan leaf: .maestro/missions/<slug>.plan.md#<leaf-slug>
 Branch: stay on the currently checked-out branch (no Maestro worktree)
 Acceptance criteria: <copy from plan leaf — all must-pass>
 Gates: <table from plan leaf>
@@ -180,7 +180,7 @@ After a parallel wave ships:
 
 1. Rebase feature branches onto base (`git fetch && git rebase origin/<base>`)
 2. Merge PRs in dependency order documented in execution overlay
-3. Update parent repo submodule pointers if `.cursor` or other submodules changed
+3. Update parent repo submodule pointers if any submodule changed
 4. Run total quality gate from plan rollup (e.g. `cargo test`, `moon run :check`)
 5. Record mission-level evidence if the plan specifies it
 

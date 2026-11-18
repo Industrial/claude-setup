@@ -27,7 +27,7 @@ Run this initialization sequence at the start of your Hermes Agent session to ve
 4. **GitHub CLI:** Use the `gh` cli for GitHub when needed.
    - This typically works outside of devenv/MCP
 
-5. Verify MCP servers from `.cursor/mcp.json`:
+5. Verify MCP servers from `.mcp.json`:
 
    **Always on:** lean-ctx · roam-code · context7 · searxng · github (official Docker image) · maestro
 

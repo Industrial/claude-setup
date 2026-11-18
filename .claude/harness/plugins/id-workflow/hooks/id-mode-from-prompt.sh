@@ -50,7 +50,7 @@ summary="$(bash "$here/id-state.sh" set "$mode" "${args[@]}" 2>&1 || true)"
 # Project copy of the shared ID pack when there is one, the vendored payload
 # copy otherwise. See session-id-context.sh for the reasoning.
 repo="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-pack=".cursor/commands/id-workflow"
+pack=".claude/id-workflow"
 [ -d "$repo/$pack" ] || pack="$HOME/.claude/id-workflow"
 
 jq -nc --arg ctx "ID workflow: mode is now $summary (set by hook from your prompt).

@@ -12,7 +12,7 @@ The idclear/monorepo repository serves as a reference for a fully-featured deven
 Based on inspection of `/data/Code/idclear/monorepo/devenv.nix`:
 
 ```nix
-cursor.features = {
+local.features = {
   program-moon = { enable = true; };
   program-lean-ctx = { enable = true; };
   program-roam-code = { enable = false; };
@@ -40,9 +40,9 @@ To match this feature set in `/data/Code/rust/solana-yield-optimizer/devenv.nix`
 
 1. **Ensure these are set to true**:
    ```nix
-   cursor.features.program-maestro.enable = true;
-   cursor.features.program-omniroute.enable = true;
-   cursor.features.program-roam-code-pypi.enable = true;
+   local.features.program-maestro.enable = true;
+   local.features.program-omniroute.enable = true;
+   local.features.program-roam-code-pypi.enable = true;
    ```
 
 2. **Note intentional differences**:
@@ -54,13 +54,13 @@ To match this feature set in `/data/Code/rust/solana-yield-optimizer/devenv.nix`
 1. **Export idclear/monorepo feature list**:
    ```bash
    # From idclear/monorepo directory
-   grep -o 'cursor\.features\.[a-zA-Z0-9\-]*\.enable\s*=\s*true' devenv.nix | cut -d. -f3 | sort > idclear-features.txt
+   grep -o 'local\.features\.[a-zA-Z0-9\-]*\.enable\s*=\s*true' devenv.nix | cut -d. -f3 | sort > idclear-features.txt
    ```
 
 2. **Export current project feature list**:
    ```bash
    # From solana-yield-optimizer directory
-   grep -o 'cursor\.features\.[a-zA-Z0-9\-]*\.enable\s*=\s*true' devenv.nix | cut -d. -f3 | sort > current-features.txt
+   grep -o 'local\.features\.[a-zA-Z0-9\-]*\.enable\s*=\s*true' devenv.nix | cut -d. -f3 | sort > current-features.txt
    ```
 
 3. **Find missing features**:
@@ -71,7 +71,7 @@ To match this feature set in `/data/Code/rust/solana-yield-optimizer/devenv.nix`
 4. **Add missing features to devenv.nix**:
    Add lines like:
    ```nix
-   cursor.features.<feature-name>.enable = true;
+   local.features.<feature-name>.enable = true;
    ```
 
 5. **Verify build works**:
@@ -85,14 +85,14 @@ To match this feature set in `/data/Code/rust/solana-yield-optimizer/devenv.nix`
 In the solana-yield-optimizer repository, the following were added to match idclear/monorepo:
 
 ```nix
-cursor.features.program-maestro.enable = true;
-cursor.features.program-omniroute.enable = true;
-cursor.features.program-roam-code-pypi.enable = true;
+local.features.program-maestro.enable = true;
+local.features.program-omniroute.enable = true;
+local.features.program-roam-code-pypi.enable = true;
 ```
 
 Additionally, the dotenv integration error was fixed by:
 ```nix
-cursor.features.dotenv.enable = false;
+local.features.dotenv.enable = false;
 ```
 
 And problematic package references were removed:
@@ -116,7 +116,7 @@ After applying changes, verify:
 ## Troubleshooting
 
 If features don't work as expected:
-1. Check that corresponding `.nix` files exist in `.cursor/nix/features/`
+1. Check that corresponding `.nix` files exist in `nix/devenv-modules/features/`
 2. Verify no syntax errors in devenv.nix
 3. Test features incrementally
 4. Clear devenv cache with `devenv update` if needed

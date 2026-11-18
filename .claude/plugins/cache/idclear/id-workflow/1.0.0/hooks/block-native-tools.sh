@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code port of .cursor/hooks/block-native-*.sh and .hermes/hooks/block-native-tools.sh.
+# Claude Code port of the former Cursor hooks block-native-*.sh and .hermes/hooks/block-native-tools.sh.
 # ROUTES (advises) native file/web tools toward the MCP servers (lean-ctx,
 # roam-code, searxng). It no longer DENIES them.
 #

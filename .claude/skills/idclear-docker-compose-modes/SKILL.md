@@ -92,5 +92,5 @@ devenv shell -- docker compose up --build -d test-nextjs ng-client risk-calculat
 
 - `history/docker-dev-prod-mode.md`
 - `history/traefik-local-routing.md`
-- `.cursor/skills/docker/docker-impl-compose-workflows/SKILL.md`
-- `.cursor/skills/docker/idclear-vps-testing-deploy/SKILL.md` — SSH deploy runbook for testing VPS (testing.idclear.com)
+- `.claude/skills/docker-impl-compose-workflows/SKILL.md`
+- `.claude/skills/idclear-vps-testing-deploy/SKILL.md` — SSH deploy runbook for testing VPS (testing.idclear.com)

@@ -73,8 +73,8 @@ case "$cmd" in
         else
             git worktree add -q --no-track -b "$type/gh-$n-$slug" "$wt" origin/staging >&2
         fi
-        # A fresh worktree has no submodules, and devenv cannot evaluate without
-        # .cursor/nix — `devenv shell` fails with "devenv.nix file does not exist".
+        # A fresh worktree has no submodules; initialise them so submodule-backed
+        # paths resolve. (The devenv modules are vendored under nix/devenv-modules/.)
         git -C "$wt" submodule update --init --recursive -q >&2
         echo "$wt"
         ;;

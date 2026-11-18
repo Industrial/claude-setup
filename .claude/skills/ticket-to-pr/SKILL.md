@@ -97,7 +97,7 @@ it, and do not silently pick one.
 
 ## Phase 2 — Plan (PLAN)
 
-`id-state.sh set PLAN`. Writes limited to `.maestro/**`, `.cursor/plans/**`, `.tmp/**`.
+`id-state.sh set PLAN`. Writes limited to `.maestro/**` (plan: `.maestro/missions/<slug>.plan.md`), `.tmp/**`.
 
 - `tiny`: inline plan — leaves, files, AC per leaf. No mission.
 - `normal`: light Maestro task from the ticket (`maestro_task_from_spec`), AC drawn from the

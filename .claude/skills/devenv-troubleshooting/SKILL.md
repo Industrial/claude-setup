@@ -31,16 +31,16 @@ To isolate issues, selectively disable devenv features in your `devenv.nix`:
 
 ```nix
 # In devenv.nix, set problematic features to false:
-cursor.features.dotenv.enable = false;
+local.features.dotenv.enable = false;
 # Add others as needed based on error context
 ```
 
 ### 3. Remove Problematic Package References
 If errors reference missing packages (like definitively):
 
-1. Check if the package is defined in your `.cursor/nix/` features:
+1. Check if the package is defined in your `nix/devenv-modules/` features:
    ```bash
-   ls -la .cursor/nix/features/ | grep -i definitively
+   ls -la nix/devenv-modules/features/ | grep -i definitively
    ```
 2. If not found, remove the reference from `devenv.nix`:
    ```nix
@@ -78,7 +78,7 @@ When seeing: "The dotenv integration requires the C-Nix devenv CLI"
 **Root Cause**: The dotenv module tries to load `devenvPrimops.loadDotenv` which only exists in the C-Nix devenv CLI, not in pure Nix evaluation.
 
 **Solution**: Either:
-- Disable the dotenv feature: `cursor.features.dotenv.enable = false;`  
+- Disable the dotenv feature: `local.features.dotenv.enable = false;`  
 - Or ensure you're using the proper devenv CLI (not evaluating as flake)
 
 ### Fixing Missing Package References
@@ -89,12 +89,12 @@ When seeing errors like: `attribute 'definitively' missing`
 **Solution**:
 1. Add the missing input to `devenv.yaml` under `inputs:`
 2. OR remove the reference if the package isn't needed
-3. Check `.cursor/nix/features/` for corresponding `.nix` files
+3. Check `nix/devenv-modules/features/` for corresponding `.nix` files
 
 ## Pitfalls
 
 ### Common Mistakes
-- **Assuming all .cursor/nix features are safe to enable**: Some features depend on specific inputs or system configurations
+- **Assuming all nix/devenv-modules features are safe to enable**: Some features depend on specific inputs or system configurations
 - **Not checking if referenced packages actually exist**: Leads to evaluation errors
 - **Overlooking that devenv evaluates modules lazily**: Errors may appear far from the actual cause
 - **Forgetting that some features conflict**: dotenv and manual .env loading can conflict

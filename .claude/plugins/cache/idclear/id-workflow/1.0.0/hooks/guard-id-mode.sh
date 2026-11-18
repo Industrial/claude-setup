@@ -6,7 +6,7 @@
 # .tmp/id/state.json decides which paths a write tool may touch:
 #
 #   ORIENT   | RESEARCH  -> .tmp/** only            (recon modes write nothing)
-#   PLAN                 -> + .maestro/**, .cursor/plans/**, specs
+#   PLAN                 -> + .maestro/** (plans: .maestro/missions/*.plan.md, specs)
 #   REVIEW               -> + .maestro/**           (evidence, not feature code)
 #   EXECUTE  | SHIP      -> everything in-tree
 #
@@ -52,7 +52,7 @@ esac
 # state area, and the mode marker itself lives there.
 case "$mode" in
     ORIENT|RESEARCH) allowed=(".tmp/") ;;
-    PLAN)            allowed=(".tmp/" ".maestro/" ".cursor/plans/") ;;
+    PLAN)            allowed=(".tmp/" ".maestro/") ;;
     REVIEW)          allowed=(".tmp/" ".maestro/") ;;
     *)               exit 0 ;;
 esac

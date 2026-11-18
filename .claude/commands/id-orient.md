@@ -25,4 +25,4 @@ Then `/id-research`, or `/id-execute` on a `tiny` lane with the files already na
 
 $ARGUMENTS
 
-`<id-pack>` is `.cursor/commands/id-workflow/` in a project that has the shared pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in a project with no `.cursor/` checkout.
+`<id-pack>` is `.claude/id-workflow/` in a project that carries its own copy of the pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in every project.

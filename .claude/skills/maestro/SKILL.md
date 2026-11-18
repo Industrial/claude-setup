@@ -76,9 +76,9 @@ First claim: `tsk-mpsu3z87-xy3w58` (`domain-spec`).
 
 Definitively code lives in `definitively/`. For domain/OTP work, also load:
 
-- `.cursor/skills/elixir/elixir-core`
-- `.cursor/skills/elixir/elixir-otp-design`
-- `.cursor/skills/elixir/elixir-testing` (when editing `test/`)
+- `.claude/skills/elixir-core`
+- `.claude/skills/elixir-otp-design`
+- `.claude/skills/elixir-testing` (when editing `test/`)
 
 Verify: `moon run definitively:format definitively:compile definitively:lint definitively:test` then `maestro task verify <tsk-id>`.
 

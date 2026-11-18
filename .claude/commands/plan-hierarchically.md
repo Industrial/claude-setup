@@ -8,11 +8,11 @@ Produce a **Maestro-native hierarchical implementation plan** of the highest pos
 
 ## Skills (load before planning)
 
-When invoked with `/skills`, review `.cursor/skills/` and load **all** of these for this command:
+When invoked with `/skills`, review `.claude/skills/` and load **all** of these for this command:
 
 | Skill | Role in this command |
 |-------|----------------------|
-| `.cursor/skills/maestro/SKILL.md` | Repo Maestro read order, heavy-mode loop, parallel waves |
+| `.claude/skills/maestro/SKILL.md` | Repo Maestro read order, heavy-mode loop, parallel waves |
 | `~/.claude/skills/maestro-design/SKILL.md` | Grill protocol → `.maestro/specs/<slug>.md` |
 | `~/.claude/skills/maestro-mission/SKILL.md` | Heavy-mode mission decomposition |
 | `~/.claude/skills/maestro-task/SKILL.md` | Task claim/verify/ship loop, `task split` |
@@ -65,7 +65,7 @@ Read order after bootstrap:
 1. `.maestro/MAESTRO.md` → `.maestro/tasks/NOW.md` → active spec/mission
 2. `.maestro/policies/*.yaml` — risk, autopilot, sensitive-paths
 3. Existing `.maestro/missions/*.execution.md` — do not contradict wave tables
-4. `.cursor/plans/` — avoid duplicate plans
+4. `.maestro/missions/*.plan.md` — avoid duplicate plans
 
 If `maestro_handoff_list` returns envelopes for your tool (`to_agent` filter), run pickup protocol per `maestro-handoff` before planning.
 
@@ -222,7 +222,7 @@ Write `.maestro/missions/<slug>.md` — objective, phases, verification, risks (
 
 ## Phase 5 — Plan document + validation
 
-Write `.cursor/plans/<slug>.plan.md`:
+Write `.maestro/missions/<slug>.plan.md`:
 
 ```yaml
 ---
@@ -247,7 +247,7 @@ Then full hierarchical body (see **Required content per leaf** below).
 After the plan file exists and a task is materialized:
 
 ```bash
-devenv shell -- maestro plan check --task <tsk-id> --plan-file .cursor/plans/<slug>.plan.md
+devenv shell -- maestro plan check --task <tsk-id> --plan-file .maestro/missions/<slug>.plan.md
 ```
 
 Fix `scope-widens`, `missing-proof`, `risk-class-too-low` before presenting.
@@ -518,4 +518,4 @@ Reject your draft if any fail:
 | `/quality` | Re-read request + this command; sharpen AC, scope, diagrams, gates; re-run plan-check |
 | `/id` / `/id-plan` | Prefer ID Workflow PLAN mode; this file remains the PLAN body |
 
-`<id-pack>` is `.cursor/commands/id-workflow/` in a project that has the shared pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in a project with no `.cursor/` checkout.
+`<id-pack>` is `.claude/id-workflow/` in a project that carries its own copy of the pack, and `~/.claude/id-workflow/` otherwise — the payload carries a copy so the rails still resolve in every project.
