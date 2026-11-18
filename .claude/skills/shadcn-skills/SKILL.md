@@ -1,4 +1,5 @@
 ---
+name: shadcn-skills
 title: "shadcn/ui Skills for Next.js 16"
 description: "Installation, components, blocks, forms, theming, and MCP guidance for shadcn/ui in modern Next.js projects using pnpm"
 keywords: ["shadcn", "ui", "Next.js", "pnpm", "blocks", "sonner", "forms", "dark-mode", "mcp"]

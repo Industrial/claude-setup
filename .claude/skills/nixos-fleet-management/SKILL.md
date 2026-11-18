@@ -1,6 +1,6 @@
 ---
 id: nixos-fleet-management
-name: NixOS Fleet Management
+name: nixos-fleet-management
 description: >-
   Manage Drakkar/Huginn/Mimir via unified flake + deploy-rs. Prefer
   nixos-deploy-rs and nixos-managing skills. Hermes-specific SSH/wrappers are

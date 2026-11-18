@@ -1,5 +1,5 @@
 ---
-name: id_effect-capabilities
+name: id-effect-capabilities
 description: >-
   Expert in id_effect 3.0 capability DI: #[capability], caps!, Env, Needs, ProviderSpec,
   provide!, run_with, provider graphs, and service trait design. Use when wiring dependencies,

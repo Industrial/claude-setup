@@ -1,5 +1,5 @@
 ---
-name: id_effect-algebra
+name: id-effect-algebra
 description: >-
   Teaches id_effect algebra stratum: Foldable, Alternative, Traversable,
   Bifoldable, Invariant. Use when extending type classes or using traverse/alt/fold.

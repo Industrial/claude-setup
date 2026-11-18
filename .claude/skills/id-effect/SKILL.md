@@ -1,5 +1,5 @@
 ---
-name: id_effect
+name: id-effect
 description: >-
   Router for id_effect Rust skills — Effect<A, E = Never, R = HNil> on a fiber runtime,
   effect!/~ do-notation, typed capability HLists (caps!, need, provide, Layer), streams,

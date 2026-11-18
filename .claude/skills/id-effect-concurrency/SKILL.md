@@ -1,5 +1,5 @@
 ---
-name: id_effect-concurrency
+name: id-effect-concurrency
 description: >-
   Teaches id_effect concurrency: fibers, fork/join, fiber_all/fiber_race/fiber_any,
   cancellation, FiberRef, supervision, scopes/finalizers, acquire_release, and Schedule

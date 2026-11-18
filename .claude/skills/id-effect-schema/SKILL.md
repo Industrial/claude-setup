@@ -1,5 +1,5 @@
 ---
-name: id_effect-schema
+name: id-effect-schema
 description: >-
   Teaches id_effect schema: Unknown at boundaries, struct_/array/optional/union
   combinators, validation refinements, and ParseError handling. Use when parsing

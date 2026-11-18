@@ -1,5 +1,5 @@
 ---
-name: id_effect-fundamentals
+name: id-effect-fundamentals
 description: >-
   Teaches id_effect foundations: Effect as a lazy description, Effect<A,E,R>, effect!
   do-notation, the ~ bind operator, map/flat_map/pipe, IntoBind for Result, and when

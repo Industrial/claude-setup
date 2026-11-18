@@ -1,5 +1,5 @@
 ---
-name: id_effect-platform
+name: id-effect-platform
 description: Platform capabilities — HttpClient, FileSystem, ProcessRuntime in id_effect_platform. Use when editing crates/id_effect_platform, platform Maestro missions, or migrating from id_effect_platform::http::reqwest.
 ---
 

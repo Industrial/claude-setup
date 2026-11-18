@@ -1,5 +1,5 @@
 ---
-name: id_effect-events
+name: id-effect-events
 description: >-
   Write and review id_effect_events and id_effect_graph — EventStore, EsEntityEventStore,
   ProjectionRunner, MemoryEventStore, FileJournal, CQRS dispatch, Dag and topological_sort.

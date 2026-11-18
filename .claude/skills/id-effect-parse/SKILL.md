@@ -1,5 +1,5 @@
 ---
-name: id_effect-parse
+name: id-effect-parse
 description: >-
   Parser combinators, Pretty documents, invertible Codec, Diff, and Stream parse
   bridges in id_effect_parse. Use when parsing text/byte protocols, pretty-printing

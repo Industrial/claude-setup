@@ -1,5 +1,5 @@
 ---
-name: id_effect-testing
+name: id-effect-testing
 description: >-
   Expert in testing id_effect code: run_test harness, Exit assertions, TestClock,
   mock_capability!, build_env/provide! test providers, and property testing. Never

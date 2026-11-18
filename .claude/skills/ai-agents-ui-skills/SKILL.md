@@ -1,4 +1,5 @@
 ---
+name: ai-agents-ui-skills
 title: "AI Agents & UI - Building Agentic Applications with AI SDK 6"
 description: "Comprehensive guide for building AI agents using ToolLoopAgent, workflow patterns, and AI SDK UI components (useChat, generative UIs, tool calling)"
 keywords: ["ToolLoopAgent", "agents", "workflows", "AI SDK UI", "useChat", "generative-ui", "tool-calling", "chatbot"]

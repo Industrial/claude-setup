@@ -1,5 +1,5 @@
 ---
-name: id_effect-resilience
+name: id-effect-resilience
 description: >-
   Runtime resilience for id_effect: RequestResolver batching, SubscriptionRef,
   Redacted schema values, match_effect!, and id_effect_resilience (circuit breaker,

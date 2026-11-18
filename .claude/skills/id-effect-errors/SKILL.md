@@ -1,5 +1,5 @@
 ---
-name: id_effect-errors
+name: id-effect-errors
 description: >-
   Teaches id_effect error handling: Exit, Cause, typed failures vs defects,
   recovery combinators, error accumulation, and CLI exit mapping. Use when handling

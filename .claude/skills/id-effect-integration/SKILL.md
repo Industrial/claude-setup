@@ -1,5 +1,5 @@
 ---
-name: id_effect-integration
+name: id-effect-integration
 description: >-
   Teaches id_effect workspace integration: id_effect_tokio run_async, id_effect_platform
   I/O, id_effect_platform::http::reqwest HTTP, id_effect_axum hosting, id_effect_config, id_effect_logger,

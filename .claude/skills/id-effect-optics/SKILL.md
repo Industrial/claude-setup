@@ -1,5 +1,5 @@
 ---
-name: id_effect-optics
+name: id-effect-optics
 description: >-
   Teaches id_effect_optics: Lens, Prism, Optional, Traversal, transducers,
   schema field paths on Unknown, JSON patch (add/replace/remove/move/copy/test), TrieZipper navigation/rebuild. Use when

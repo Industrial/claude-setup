@@ -1,5 +1,5 @@
 ---
-name: id_effect-compute-fabric
+name: id-effect-compute-fabric
 description: >-
   Teaches id_effect Compute Fabric: ResourcePolicy, supervisor admission, run/run_with
   installation, implicit parallelism (ADR 0007/0008), AdaptiveContext, and EDG auto-parallel

@@ -1,5 +1,5 @@
 ---
-name: id_effect-streams
+name: id-effect-streams
 description: >-
   Teaches id_effect streams: Stream vs Effect, chunks, sinks, backpressure,
   map_par_n async concurrency, and Rayon Parallelism policy. Use when processing

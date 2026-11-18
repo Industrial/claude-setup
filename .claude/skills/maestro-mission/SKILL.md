@@ -1,6 +1,6 @@
 ---
 name: maestro-mission
-description: Turn an approved heavy-mode product-spec into an executable mission with child tasks. Use after `maestro-design` has produced a `mode: heavy` spec, or when a single task has grown big enough that it should be decomposed into a multi-PR batch. Persists the mission to `.maestro/missions/missions.jsonl` and the child tasks to `.maestro/tasks/tasks.jsonl`.
+description: "Turn an approved heavy-mode product-spec into an executable mission with child tasks. Use after `maestro-design` has produced a `mode: heavy` spec, or when a single task has grown big enough that it should be decomposed into a multi-PR batch. Persists the mission to `.maestro/missions/missions.jsonl` and the child tasks to `.maestro/tasks/tasks.jsonl`."
 ---
 
 # Maestro Mission

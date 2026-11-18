@@ -1,5 +1,5 @@
 ---
-name: id_effect-review
+name: id-effect-review
 description: >-
   Reviews id_effect Rust code for idiomaticity, capability DI violations, removed API
   usage, effect! misuse, and test gaps. Use when reviewing pull requests, examining

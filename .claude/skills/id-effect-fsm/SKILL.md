@@ -1,5 +1,5 @@
 ---
-name: id_effect-fsm
+name: id-effect-fsm
 description: >-
   Write and review id_effect_fsm — StateMachine, TransitionTable, Interpreter with run_blocking,
   to_mermaid, HasTag matcher bridge, Saga compensation, SessionSend/SessionRecv, workflow bridge.

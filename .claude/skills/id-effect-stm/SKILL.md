@@ -1,5 +1,5 @@
 ---
-name: id_effect-stm
+name: id-effect-stm
 description: >-
   Teaches id_effect STM: Stm, TRef, commit/atomically, stm!, TQueue/TMap/TSemaphore,
   stm::fail/retry. Use for composable in-memory shared state without mutex deadlocks.
