@@ -112,6 +112,7 @@ maestro
 new-skill
 skill-library
 ticket-to-pr
+ticket-lifecycle
 pre-push-ci
 improve-test-coverage
 definitively-programs
