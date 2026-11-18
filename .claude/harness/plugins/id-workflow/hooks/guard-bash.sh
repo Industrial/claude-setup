@@ -72,63 +72,63 @@ if [ "${CLAUDE_ALLOW_NATIVE_TOOLS:-0}" != "1" ]; then
         deny "Unbounded 'find' refused: on this repo it returns thousands of paths and gets spilled to an archive, costing a round trip. Use ctx_glob(pattern=\"**/NAME\") or ctx_tree(path=..., depth=N), or add -maxdepth.${HATCH}"
     fi
 
-# 2c. Dumping a large file into context.
-#
-# Rewritten 2026-11-12 after a peer session lost ~15 minutes and filed a
-# confidently wrong report off the back of this check. The old test asked
-# whether the words cat/head/tail appeared ANYWHERE in the command, then
-# denied if ANY whitespace-split token was a >64KB file. The two halves were
-# never correlated, so the big file did not have to be an argument of
-# anything. Three distinct failures came out of that:
-#
-#   (a) A heredoc body that merely MENTIONED a 1 MB path was tokenised, so
-#       `... <<PY ... PY | tail -3` was refused for a command that read no
-#       file at all. Heredoc bodies are data, not arguments — they are
-#       stripped before tokenising now.
-#
-#   (b) `git push origin main > .tmp/push.log 2>&1; ...; tail -12 .tmp/push.log`
-#       was refused IN FULL because .tmp/push.log already existed at 274 KB
-#       from an earlier run. The push never happened, but the wording read as
-#       a read refusal, so the session went on to diagnose a day-old log in
-#       detail. Hence: redirect targets are writes, not reads, and the deny
-#       text now says outright that nothing ran.
-#
-#   (c) `tail -12` on a 274 KB file was treated as a dump. head and tail are
-#       bounded by construction — they default to 10 lines. They are refused
-#       only when the count asked for is itself unbounded (a huge -n/-c, or
-#       `tail -n +N` / `head -n -N`, which both mean "the rest of the file").
-#
-# A basename comparison also closes a false negative the old regex had:
-# `/usr/bin/cat bigfile` was allowed, because the pattern wanted cat at a
-# word boundary.
-#
-# Thresholds stay generous. The point is to catch `cat <bigfile>`, not to
-# police small reads.
+    # 2c. Dumping a large file into context.
+    #
+    # Rewritten 2026-11-12 after a peer session lost ~15 minutes and filed a
+    # confidently wrong report off the back of this check. The old test asked
+    # whether the words cat/head/tail appeared ANYWHERE in the command, then
+    # denied if ANY whitespace-split token was a >64KB file. The two halves were
+    # never correlated, so the big file did not have to be an argument of
+    # anything. Three distinct failures came out of that:
+    #
+    #   (a) A heredoc body that merely MENTIONED a 1 MB path was tokenised, so
+    #       `... <<PY ... PY | tail -3` was refused for a command that read no
+    #       file at all. Heredoc bodies are data, not arguments — they are
+    #       stripped before tokenising now.
+    #
+    #   (b) `git push origin main > .tmp/push.log 2>&1; ...; tail -12 .tmp/push.log`
+    #       was refused IN FULL because .tmp/push.log already existed at 274 KB
+    #       from an earlier run. The push never happened, but the wording read as
+    #       a read refusal, so the session went on to diagnose a day-old log in
+    #       detail. Hence: redirect targets are writes, not reads, and the deny
+    #       text now says outright that nothing ran.
+    #
+    #   (c) `tail -12` on a 274 KB file was treated as a dump. head and tail are
+    #       bounded by construction — they default to 10 lines. They are refused
+    #       only when the count asked for is itself unbounded (a huge -n/-c, or
+    #       `tail -n +N` / `head -n -N`, which both mean "the rest of the file").
+    #
+    # A basename comparison also closes a false negative the old regex had:
+    # `/usr/bin/cat bigfile` was allowed, because the pattern wanted cat at a
+    # word boundary.
+    #
+    # Thresholds stay generous. The point is to catch `cat <bigfile>`, not to
+    # police small reads.
 
-DUMP_SIZE_CAP=65536   # file size above which an unbounded read is refused
-DUMP_LINE_CAP=5000    # -n above this is not a window any more
-DUMP_BYTE_CAP=65536   # -c above this is not a window any more
+    DUMP_SIZE_CAP=65536   # file size above which an unbounded read is refused
+    DUMP_LINE_CAP=5000    # -n above this is not a window any more
+    DUMP_BYTE_CAP=65536   # -c above this is not a window any more
 
-# Does an explicit count ask for effectively the whole file?
-# $1 = value as written, $2 = cap, $3 = which dumper. 0 = unbounded.
-dump_count_unbounded() {
-    local val="$1" cap="$2" who="$3" n mult=1
-    case "$val" in
-        +*) [ "$who" = tail ] && return 0 || return 1 ;;
-        -*) [ "$who" = head ] && return 0 || return 1 ;;
-    esac
-    case "$val" in
-        *[gGmM]|*[gGmM]B) return 0 ;;
-        *[kK]|*[kK]B) mult=1024 ;;
-    esac
-    n="${val%%[!0-9]*}"
-    [ -n "$n" ] || return 1
-    [ "$(( n * mult ))" -gt "$cap" ] && return 0
-    return 1
-}
+    # Does an explicit count ask for effectively the whole file?
+    # $1 = value as written, $2 = cap, $3 = which dumper. 0 = unbounded.
+    dump_count_unbounded() {
+        local val="$1" cap="$2" who="$3" n mult=1
+        case "$val" in
+            +*) [ "$who" = tail ] && return 0 || return 1 ;;
+            -*) [ "$who" = head ] && return 0 || return 1 ;;
+        esac
+        case "$val" in
+            *[gGmM]|*[gGmM]B) return 0 ;;
+            *[kK]|*[kK]B) mult=1024 ;;
+        esac
+        n="${val%%[!0-9]*}"
+        [ -n "$n" ] || return 1
+        [ "$(( n * mult ))" -gt "$cap" ] && return 0
+        return 1
+    }
 
-# Heredoc bodies are data. Drop them before anything is tokenised.
-dump_scan="$(printf '%s\n' "$command" | awk '
+    # Heredoc bodies are data. Drop them before anything is tokenised.
+    dump_scan="$(printf '%s\n' "$command" | awk '
         BEGIN { delim = "" }
         {
             if (delim != "") {
@@ -224,9 +224,15 @@ fi
 # needless ceremony for `ls`, `git status` or `jq`. The requirement is real only
 # for commands that need the pinned toolchain or the shell's env (TMPDIR,
 # CARGO_DRIFT_FFI_PATH, LD_LIBRARY_PATH, NATS_URL, PYTHONPATH) — see AGENTS.md.
+#
+# (c) HOW. A repo may ship `bin/with-devenv`: the shell's packages and env as a
+# store binary, with no shell entry. Prefer it, because entering a devenv shell
+# runs that repo's git-hooks task, and hooks that re-enter the shell recurse.
+# In .dotfiles on 2026-11-18 that reached 16+ concurrent `prek run -a` processes
+# and reverted 153 dirty files. Where the repo has the wrapper, suggest it.
 trimmed="$(printf '%s' "$command" | sed 's/^[[:space:]]*//')"
 case "$trimmed" in
-    "devenv shell --"*) exit 0 ;;
+    "devenv shell --"*|"bin/with-devenv "*|"./bin/with-devenv "*|".devenv/with-devenv "*) exit 0 ;;
 esac
 
 hook_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty')"
@@ -235,6 +241,9 @@ repo="${CLAUDE_PROJECT_DIR:-${hook_cwd:-$PWD}}"
 if [ -f "$repo/devenv.nix" ] \
     && { printf '%s' "$trimmed" | grep -Eq '(^|[;|&[:space:]])(moon|pytest|ruff|ty|uv|cargo|maestro|assay|treefmt|prek|freqtrade)([[:space:]]|$)' \
         || printf '%s' "$trimmed" | grep -Eq '(^|[;|&[:space:]])python3?([[:space:]]|$)'; }; then
+    if [ -x "$repo/bin/with-devenv" ]; then
+        deny "Toolchain commands need the devenv toolchain and env (TMPDIR, LD_LIBRARY_PATH, NATS_URL=…:14222, PYTHONPATH). This repo provides it without entering the shell: bin/with-devenv $trimmed  (prefer this over 'devenv shell --', whose shell entry runs the repo's git hooks)${HATCH}"
+    fi
     deny "Toolchain commands must run inside the devenv shell, which supplies the pinned binaries and the env (TMPDIR, LD_LIBRARY_PATH, NATS_URL=…:14222, PYTHONPATH). Re-run as: devenv shell -- $trimmed${HATCH}"
 fi
 
