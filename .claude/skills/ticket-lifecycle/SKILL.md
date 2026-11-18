@@ -244,6 +244,8 @@ Everything in ticket-to-pr's list, plus:
 | Commit fails "Stashed changes conflicted with changes made by hook" | same formatter rewrote an unstaged file | as above |
 | Every commit/push in every checkout fails after cleanup | devenv entry in the worktree re-installed the shared prek hooks with `--config=<worktree>/…` | `worktree.sh close` repoints them at the main checkout; for a worktree removed by hand, `sed -i 's#<wt>/#<main>/#' "$(git rev-parse --git-common-dir)"/hooks/*` |
 | A unit test of the reader passes, the bug persists | the step never receives the cell — `display.values` carries only the step's *own* declared cells | the regression test must go through the step builder and the controller's prefill functions, not hand the reader the row |
+| A watcher "succeeded" but the PR is still open or the deploy unconfirmed | its output was piped (`… \| tail`), so the exit code you saw is `tail`'s | redirect to a log and `echo "exit=$?"` instead; the exit-code tables above only hold for the script's own code |
+| `test` red after ~45 min with no failed step; annotation "The hosted runner lost communication with the server" | GitHub runner died (resource starvation), not a test failure | `gh run rerun <run-id> --failed` once and re-arm the watcher; it counts toward the three-red-rounds limit only if it recurs |
 | Card jumped to Done on merge | PR said `Closes #n` | use `Refs #n`; move the card back to Staging after the deploy |
 | `move` exit 3 on In Progress / In Review | board has no such column | log it and carry on |
 | `watch-deploy` sits at "no deployment contains …" | poller skipped (deploy in flight) or timer stopped | `ssh targ@… systemctl status coolify-staging-poller.timer` — report, do not trigger deploys yourself |
