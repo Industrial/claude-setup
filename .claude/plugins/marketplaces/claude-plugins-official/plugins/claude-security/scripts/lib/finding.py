@@ -1,9 +1,14 @@
-"""The Finding record every product carries, and build_finding, which validates a raw one."""
+"""The Finding every product is built from, and build_finding, which validates a raw one."""
 
 from __future__ import annotations
 
+import ntpath
 import os
+import posixpath
 import re
+from enum import IntEnum
+from itertools import dropwhile
+from pathlib import Path
 from typing import TypedDict
 
 from . import absolute, cwe
@@ -19,7 +24,7 @@ class Panel(TypedDict):
 
 
 class Finding(TypedDict):
-    """One validated finding: the JSONL record, whose field order is this class's order."""
+    """One validated finding, in the JSONL record's field order; the record adds the id (Record)."""
 
     id: str
     title: str
@@ -36,11 +41,40 @@ class Finding(TypedDict):
     cwe_id: str
     snippet: str
     symbol: str
+    declared_line: int
+    via_change: str | None
+    other_cwe_ids: list[str]
 
 
-SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW")
-CONFIDENCES = ("low", "medium", "high")
-CONFIDENCE_RANK = {"low": 1, "medium": 2, "high": 3}
+class Record(Finding):
+    """A finding as every product carries it: placed on its line (sarif.placed), its id last."""
+
+    claudeSecurityPluginFindingId: str
+
+
+class Severity(IntEnum):
+    """A finding's severity."""
+
+    CRITICAL = 4
+    HIGH = 3
+    MEDIUM = 2
+    LOW = 1
+
+    @classmethod
+    def of(cls, record: JsonMap) -> Severity | None:
+        """A record's severity from its word, stripped and in any letter case; None when the
+        word names none.
+        """
+        return cls.__members__.get(str(record.get("severity", "")).strip().upper())
+
+
+class Confidence(IntEnum):
+    """A finding's confidence."""
+
+    low = 1
+    medium = 2
+    high = 3
+
 
 PANEL_VOTER_COUNT = 3
 PANEL_KEEP_QUORUM = 2
@@ -53,6 +87,25 @@ class FindingError(Exception):
     """A refusal; the message names what a findings.json record got wrong."""
 
 
+class FindingPathError(FindingError):
+    """A refusal of one finding's model-written path; the rest of a report can still carry.
+
+    The message names the finding and quotes the declared path; `finding_id`
+    and `wrong` (what is wrong with the path, without the path) are what a
+    caller surviving the refusal may record in a product.
+    """
+
+    finding_id: str
+    wrong: str
+    cwes: tuple[int, ...] = ()
+    snippet: str = ""
+
+    def __init__(self, finding_id: str, *, declared: str, wrong: str) -> None:
+        super().__init__(f"finding {finding_id} file {declared!r} {wrong}")
+        self.finding_id = finding_id
+        self.wrong = wrong
+
+
 def cwe_number(item: JsonMap, finding_id: str) -> int:
     """A finding's CWE number; a cwe_id missing, unreadable or malformed is refused.
 
@@ -61,22 +114,60 @@ def cwe_number(item: JsonMap, finding_id: str) -> int:
     under Uncategorized, and the renderer discloses the substitution.
     """
     declared = text_field(item, "cwe_id", finding_id, required=True)
+    return cwe_parsed(declared, finding_id, "cwe_id")
+
+
+def cwe_parsed(declared: str, finding_id: str, field: str) -> int:
+    """The number in one CWE id as a record may spell it; anything else is refused."""
     matched = re.fullmatch(
         r"(?:CWE-)?0*([1-9][0-9]{0,4})", declared.strip().upper().replace("_", "-")
     )
     if not matched:
-        msg = f"finding {finding_id} cwe_id {declared!r} is not a CWE id such as CWE-89"
+        msg = f"finding {finding_id} {field} {declared!r} is not a CWE id such as CWE-89"
         raise FindingError(msg)
     return int(matched[1])
 
 
-def confidence_value(raw: object) -> str:
-    """A finding's stated confidence, normalized to low|medium|high; refuses others."""
+# The research schema opens every change link with "file:line "; sarif.placed reads that site.
+LINK_SITE = re.compile(r"(.+?):([1-9][0-9]{0,14})(?:-([1-9][0-9]{0,14}))?\b")
+
+
+def link_field(item: JsonMap, finding_id: str, scan_root: str, scan_prefix: str) -> str | None:
+    """A change scan's via_change with its leading file normalised like `file`; None when absent.
+
+    A link that does not open with a file:line the scan can place is kept as written.
+    """
+    link = text_field(item, "via_change", finding_id).strip() or None
+    matched = LINK_SITE.match(link or "")
+    if not (link and matched):
+        return link
+    try:
+        file = relative_path(matched[1], finding_id, scan_root, scan_prefix, must_exist=False)
+    except FindingPathError:
+        return link
+    return file + link[matched.end(1) :]
+
+
+def other_cwe_numbers(item: JsonMap, finding_id: str, primary: int) -> list[int]:
+    """The further CWE numbers a finding carries, the primary and repeats left out."""
+    raw = item.get("other_cwe_ids")
+    if raw is None:
+        return []
+    entries = [entry for entry in raw if is_str(entry)] if is_list(raw) else []
+    if not is_list(raw) or len(entries) != len(raw):
+        msg = f"finding {finding_id} other_cwe_ids is not a list of CWE ids"
+        raise FindingError(msg)
+    numbers = [cwe_parsed(entry, finding_id, "other_cwe_ids") for entry in entries]
+    return [n for n in dict.fromkeys(numbers) if n != primary]
+
+
+def confidence_value(raw: object) -> Confidence:
+    """A finding's stated confidence, in any letter case; refuses any other value."""
     if is_str(raw):
         word = raw.strip().lower()
-        if word in CONFIDENCE_RANK:
-            return word
-    msg = f"confidence {raw!r} is not one of {'/'.join(CONFIDENCES)}"
+        if word in Confidence.__members__:
+            return Confidence[word]
+    msg = f"confidence {raw!r} is not one of {'/'.join(Confidence.__members__)}"
     raise FindingError(msg)
 
 
@@ -100,12 +191,65 @@ def panel_complete(record: object) -> Panel | None:
     }
 
 
-def vote_confidence_ceiling(record: object) -> str | None:
+def vote_rounds(votes: JsonMap) -> JsonMap:
+    """The vote record's rounds by id, or an empty map when it holds none."""
+    raw = votes.get("rounds")
+    return raw if is_map(raw) else {}
+
+
+def finding_panels(rounds: JsonMap, ids: list[str]) -> list[tuple[str, Panel | None]]:
+    """Each finding id with its complete panel in the rounds, or None, in the order given."""
+    return [(i, panel_complete(rounds.get(i))) for i in ids]
+
+
+def vote_confidence_ceiling(record: object) -> Confidence | None:
     """A finding's vote-backed confidence: `high` if unanimous, `medium` if complete, else None."""
     panel = panel_complete(record)
     if panel is None:
         return None
-    return "high" if panel["true"] >= PANEL_VOTER_COUNT else "medium"
+    return Confidence.high if panel["true"] >= PANEL_VOTER_COUNT else Confidence.medium
+
+
+def line_number(raw: object) -> int | None:
+    """A findings.json line value as an integer: an int, or digits in a string; None otherwise."""
+    if is_str(raw) and re.fullmatch(r"\s*-?[0-9]{1,15}\s*", raw):
+        return int(raw)
+    return raw if is_int(raw) else None
+
+
+def line_field(item: JsonMap, key: str, finding_id: str, default: int) -> int:
+    """One of a finding's line fields as an integer (line_number); absent reads as `default`."""
+    line = line_number(item.get(key, default))
+    if line is None:
+        msg = f"finding {finding_id} {key} {item.get(key)!r} is not an integer"
+        raise FindingError(msg)
+    return line
+
+
+def repository_file(scan_prefix: str, *, file: str) -> str:
+    """A scan-root-relative `file` made repository-relative by a lexical fold."""
+    return posixpath.normpath(scan_prefix + file)
+
+
+def scan_prefix_fits(prefix: str, *, scan_root: str) -> bool:
+    """Whether `prefix` has no more components than the scan root's real path, as a prefix git
+    printed always does."""
+    try:
+        return prefix.count("/") <= len(Path(os.path.realpath(scan_root)).parents)
+    except (OSError, ValueError):
+        return False
+
+
+def scan_prefix_shaped(prefix: str) -> bool:
+    """Whether `prefix` is what `git rev-parse --show-prefix` prints: empty, or `a/b/`."""
+    if not prefix:
+        return True
+    return (
+        prefix.endswith("/")
+        and "\\" not in prefix
+        and not ntpath.splitdrive(prefix)[0]
+        and all(segment not in {"", ".", ".."} for segment in prefix.split("/")[:-1])
+    )
 
 
 def text_field(item: JsonMap, key: str, finding_id: str, required: bool = False) -> str:
@@ -127,47 +271,116 @@ def text_field(item: JsonMap, key: str, finding_id: str, required: bool = False)
     return text
 
 
+def leaked_spelling(path: str, *, first: str, scan_root: str) -> bool:
+    """Whether a path's cross-platform absolute spelling names the machine, not the repository."""
+    if not absolute.spelled(path):
+        return False
+    if os.name == "nt":
+        return True
+    return not os.path.lexists(os.path.join(scan_root, first))
+
+
 def file_field(
     item: JsonMap, finding_id: str, scan_root: str, scan_prefix: str, must_exist: bool
 ) -> str:
     """A finding's file relative to the scan root; a path that leaves the repository is refused.
 
-    `scan_prefix` is the scan root's path below the repository top level (`a/b/`,
-    or empty): a file may climb one directory per prefix component and no further.
-    A file spelled relative to the top level, absent under the scan root but
-    present under the top level, is respelled relative to the scan root.
-    With `must_exist` (a codebase scan, whose whole tree is still present when
-    the report renders), a path that exists neither under the scan root nor at
-    the repository top level is refused.
+    `scan_prefix` is the scan root's path below the repository top level (`a/b/`, or empty).
+    With `must_exist` (a codebase scan) a missing file is refused. relative_path has the rules.
     """
     declared = text_field(item, "file", finding_id, required=True).strip()
+    return relative_path(declared, finding_id, scan_root, scan_prefix, must_exist)
+
+
+def located(spelled: str, *, root: Path, top: Path) -> Path | None:
+    """The path `spelled` resolves to from the scan root `root` or the repository top level `top`.
+
+    The result may lie outside the repository, through a link. None when no place holds the folder
+    the path names and the path has a `..` after its leading climb.
+    """
+    if Path(spelled).is_absolute():
+        return Path(os.path.realpath(spelled))
+    files: list[Path] = []
+    for base in dict.fromkeys((root, top)):
+        spelled_from = Path(base, spelled)
+        if top not in Path(os.path.normpath(spelled_from)).parents:
+            continue
+        folder = Path(os.path.realpath(spelled_from.parent))
+        if top not in {folder, *folder.parents}:
+            if not files:
+                return Path(os.path.realpath(spelled_from))
+            continue
+        if spelled_from.parent.is_dir():
+            file = Path(os.path.realpath(spelled_from))
+            if top not in file.parents:
+                if not files:
+                    return file
+                continue
+            if file.exists():
+                return file
+            files.append(file)
+    if not files and ".." not in dropwhile(lambda part: part == "..", Path(spelled).parts):
+        files = [Path(os.path.realpath(Path(root, spelled)))]
+    return next(iter(files), None)
+
+
+def relative_path(
+    declared: str, finding_id: str, scan_root: str, scan_prefix: str, must_exist: bool
+) -> str:
+    """A file as a finding spells it, resolved and made relative to the scan root.
+
+    The path is refused when it resolves outside the repository, to the scan root or above, or
+    to a missing file that a codebase scan needs or whose stored path would name another file.
+    """
     depth = scan_prefix.count("/")
-    beyond = "repository" if depth else "scan root"
-    refusal = f"finding {finding_id} file {declared!r} escapes the {beyond}"
-    path = declared.replace("\\", "/")
+    escapes = f"escapes the {'repository' if depth else 'scan root'}"
+    unresolved = "cannot be resolved"
+    elsewhere = "could be mistaken for a path at the repository top level"
+    spelled = declared.replace("\\", "/")
     prefix = scan_root.replace("\\", "/").rstrip("/") + "/"
-    if scan_root and path.startswith(prefix):
-        path = path[len(prefix) :].lstrip("/")
-    if os.path.isabs(path):
-        try:
-            path = os.path.relpath(os.path.realpath(path), scan_root).replace("\\", "/")
-        except (ValueError, OSError) as error:
-            raise FindingError(refusal) from error
-    parts = [part for part in path.split("/") if part and part != "."]
-    climb = next((i for i, part in enumerate(parts) if part != ".."), len(parts))
-    inside = parts[climb:]
-    if not inside or absolute.spelled(path) or ".." in inside or climb > depth:
-        raise FindingError(refusal)
-    if not os.path.lexists(os.path.join(scan_root, *parts)):
-        # A file only the repository top level holds was spelled relative to it, not the scan root.
-        if depth and not climb:
-            at_top = os.path.join(os.path.normpath(os.path.join(scan_root, "../" * depth)), *parts)
-            if os.path.lexists(at_top):
-                return os.path.relpath(at_top, scan_root).replace("\\", "/")
-        if must_exist:
-            msg = f"finding {finding_id} file {declared!r} does not exist in the scanned tree"
-            raise FindingError(msg)
-    return "/".join(parts)
+    if scan_root and spelled.startswith(prefix):
+        spelled = spelled[len(prefix) :].lstrip("/")
+    root = Path(os.path.realpath(scan_root))
+    top = (root, *root.parents)[depth]
+    leaves = top not in Path(os.path.normpath(Path(root, spelled))).parents
+    if leaves and not Path(spelled).is_absolute():
+        raise FindingPathError(finding_id, declared=declared, wrong=escapes)
+    try:
+        file = located(spelled, root=root, top=top)
+    except (OSError, ValueError) as error:
+        wrong = escapes if leaves else unresolved
+        raise FindingPathError(finding_id, declared=declared, wrong=wrong) from error
+    if file is None:
+        unreadable = "cannot be read from the scan root or the repository top level"
+        raise FindingPathError(finding_id, declared=declared, wrong=unreadable)
+    if top not in file.parents:
+        raise FindingPathError(finding_id, declared=declared, wrong=escapes)
+    if root.is_relative_to(file):
+        raise FindingPathError(finding_id, declared=declared, wrong="names a folder, not a file")
+    relative = Path(os.path.relpath(file, root)).as_posix()
+    if leaked_spelling(relative, first=relative.split("/")[0], scan_root=scan_root):
+        raise FindingPathError(finding_id, declared=declared, wrong=escapes)
+    try:
+        exists = file.exists()
+    except OSError as error:
+        raise FindingPathError(finding_id, declared=declared, wrong=unresolved) from error
+    if exists:
+        return relative
+    if must_exist:
+        raise FindingPathError(
+            finding_id, declared=declared, wrong="does not exist in the scanned tree"
+        )
+    try:
+        again = located(relative, root=root, top=top)
+    except OSError as error:
+        raise FindingPathError(finding_id, declared=declared, wrong=unresolved) from error
+    if (
+        again is None
+        or top not in again.parents
+        or Path(os.path.relpath(again, root)).as_posix() != relative
+    ):
+        raise FindingPathError(finding_id, declared=declared, wrong=elsewhere)
+    return relative
 
 
 def build_finding(
@@ -188,25 +401,21 @@ def build_finding(
         msg = f"finding id {finding_id!r} is not a valid id"
         raise FindingError(msg)
 
-    severity = str(raw.get("severity", "")).strip().upper()
-    if severity not in SEVERITIES:
+    severity = Severity.of(raw)
+    if severity is None:
         msg = (
             f"finding {finding_id} severity {raw.get('severity')!r} is not one of "
-            f"{'/'.join(SEVERITIES)}"
+            f"{'/'.join(Severity.__members__)}"
         )
         raise FindingError(msg)
 
     confidence = confidence_value(raw.get("confidence"))
     ceiling = vote_confidence_ceiling(rounds_by_id.get(finding_id))
-    if ceiling is not None and CONFIDENCE_RANK[confidence] > CONFIDENCE_RANK[ceiling]:
-        confidence = ceiling
+    if ceiling is not None:
+        confidence = min(confidence, ceiling)
 
-    line = raw.get("line", 0)
-    if is_str(line) and re.fullmatch(r"\s*-?[0-9]{1,15}\s*", line):
-        line = int(line)
-    if not is_int(line):
-        msg = f"finding {finding_id} line {raw.get('line')!r} is not an integer"
-        raise FindingError(msg)
+    line = line_field(raw, "line", finding_id, 0)
+    declared_line = line_field(raw, "declared_line", finding_id, line)
 
     preconditions: list[str] = []
     declared = raw.get("preconditions")
@@ -221,21 +430,38 @@ def build_finding(
 
     number = cwe_number(raw, finding_id)
     category = cwe.catalog.category(number)
+    title = text_field(raw, "title", finding_id, required=True)
+    impact = text_field(raw, "impact", finding_id)
+    description = text_field(raw, "description", finding_id, required=True)
+    exploit_scenario = text_field(raw, "exploit_scenario", finding_id, required=True)
+    recommendation = text_field(raw, "recommendation", finding_id)
+    snippet = text_field(raw, "snippet", finding_id)
+    symbol = text_field(raw, "symbol", finding_id)
+    via_change = link_field(raw, finding_id, scan_root, scan_prefix)
+    further = other_cwe_numbers(raw, finding_id, number)
+    try:
+        file = file_field(raw, finding_id, scan_root, scan_prefix, must_exist)
+    except FindingPathError as error:
+        error.cwes, error.snippet = (number, *further), snippet
+        raise
 
     return {
         "id": finding_id,
-        "title": text_field(raw, "title", finding_id, required=True),
-        "impact": text_field(raw, "impact", finding_id),
-        "file": file_field(raw, finding_id, scan_root, scan_prefix, must_exist),
+        "title": title,
+        "impact": impact,
+        "file": file,
         "line": line,
-        "description": text_field(raw, "description", finding_id, required=True),
-        "exploit_scenario": text_field(raw, "exploit_scenario", finding_id, required=True),
+        "description": description,
+        "exploit_scenario": exploit_scenario,
         "preconditions": preconditions,
         "category": category.name if category is not None else cwe.UNCATEGORIZED,
-        "severity": severity,
-        "confidence": confidence,
-        "recommendation": text_field(raw, "recommendation", finding_id),
+        "severity": severity.name,
+        "confidence": confidence.name,
+        "recommendation": recommendation,
         "cwe_id": f"CWE-{number}",
-        "snippet": text_field(raw, "snippet", finding_id),
-        "symbol": text_field(raw, "symbol", finding_id),
+        "snippet": snippet,
+        "symbol": symbol,
+        "declared_line": declared_line,
+        "via_change": via_change,
+        "other_cwe_ids": [f"CWE-{n}" for n in further],
     }

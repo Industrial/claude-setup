@@ -21,12 +21,39 @@
       },
       {
         "scope": "project",
+        "projectPath": "/data/Code/idclear/monorepo",
         "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
         "version": "1.0.0",
         "installedAt": "2026-08-25T23:00:04.886Z",
         "lastUpdated": "2026-08-25T23:00:04.886Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/Code/rust/redox",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-09T23:54:35.155Z",
+        "lastUpdated": "2026-11-09T23:54:35.155Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/.dotfiles",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T01:25:03.193Z",
+        "lastUpdated": "2026-11-10T01:25:03.193Z",
+        "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec"
+      },
+      {
+        "scope": "project",
+        "installPath": "/home/tom/.claude/plugins/cache/idclear/id-workflow/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T23:51:39.407Z",
+        "lastUpdated": "2026-11-10T23:51:39.407Z",
         "gitCommitSha": "59dfca547c5b9d4791d82f1bd5dce66d2949d1ec",
-        "projectPath": "/data/Code/idclear/monorepo"
+        "projectPath": "/home/tom/Code/rust/nautilus-trader"
       }
     ],
     "pyright-lsp@claude-plugins-official": [
@@ -36,6 +63,38 @@
         "version": "1.0.0",
         "installedAt": "2026-08-25T23:00:04.886Z",
         "lastUpdated": "2026-08-25T23:00:04.886Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/Code/rust/redox",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-09T23:54:35.155Z",
+        "lastUpdated": "2026-11-09T23:54:35.155Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/.dotfiles",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T01:25:03.193Z",
+        "lastUpdated": "2026-11-10T01:25:03.193Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/data/Code/idclear/monorepo",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T01:25:18.139Z",
+        "lastUpdated": "2026-11-10T01:25:18.139Z"
+      },
+      {
+        "scope": "project",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/pyright-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T23:51:39.407Z",
+        "lastUpdated": "2026-11-10T23:51:39.407Z",
+        "projectPath": "/home/tom/Code/rust/nautilus-trader"
       }
     ],
     "rust-analyzer-lsp@claude-plugins-official": [
@@ -54,6 +113,38 @@
         "version": "1.0.0",
         "installedAt": "2026-08-25T23:00:04.886Z",
         "lastUpdated": "2026-08-25T23:00:04.886Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/Code/rust/redox",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-09T23:54:35.155Z",
+        "lastUpdated": "2026-11-09T23:54:35.155Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/home/tom/.dotfiles",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T01:25:03.193Z",
+        "lastUpdated": "2026-11-10T01:25:03.193Z"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/data/Code/idclear/monorepo",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T01:25:18.139Z",
+        "lastUpdated": "2026-11-10T01:25:18.139Z"
+      },
+      {
+        "scope": "project",
+        "installPath": "/home/tom/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-11-10T23:51:39.407Z",
+        "lastUpdated": "2026-11-10T23:51:39.407Z",
+        "projectPath": "/home/tom/Code/rust/nautilus-trader"
       }
     ]
   }
