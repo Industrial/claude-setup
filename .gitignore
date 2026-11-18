@@ -84,3 +84,11 @@ logs/
 # Editor/tool leftovers that accumulate in this tree
 *.bak
 .claude/settings.json.bak
+
+# Claude Code runtime caches: per-process markers, account-synced content, directory caches
+.claude/plugins/**/.in_use/
+.claude/plugins/.last_inuse_sweep
+.claude/plugins/plugin-directory-cache-v2.json
+.claude/plugins/store/
+.claude/plugins/synced/
+.claude/skills/synced/
