@@ -49,7 +49,26 @@ close_one() {
     fi
     git worktree remove --force "$wt"
     git worktree prune
+    repoint_hooks "$wt"
     echo "removed $wt"
+}
+
+# Entering `devenv shell` in a worktree re-installs the repo's prek hooks with
+# `--config=<that worktree>/.pre-commit-config.yaml`, and the hooks directory is
+# shared by every worktree. Once the worktree is gone every commit and push in
+# every checkout would fail on a missing config — so point any hook that names
+# the removed tree back at the main checkout's config.
+repoint_hooks() {
+    local gone="$1" hooks main
+    hooks="$(git rev-parse --path-format=absolute --git-common-dir)/hooks"
+    main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+    for h in "$hooks"/*; do
+        [ -f "$h" ] || continue
+        if grep -qF "$gone/" "$h"; then
+            sed -i "s#$gone/#$main/#g" "$h"
+            echo "repointed $(basename "$h") hook at $main" >&2
+        fi
+    done
 }
 
 cmd="${1:-}"; shift || true

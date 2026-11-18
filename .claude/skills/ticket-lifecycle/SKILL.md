@@ -68,9 +68,15 @@ bash $S/board.sh status <n>         # must print the Ready column
 gh issue view <n> --repo idclear/monorepo --json state,title,assignees
 ```
 
-- Card not in **Ready** → stop and say where it is. Do not pull work from Backlog, and do not
-  restart a ticket that is already In Progress unless the user said to (then reuse its
-  worktree/branch — `worktree.sh open` does that).
+- Card not in **Ready** → stop and say where it is. Do not pull work from Backlog on your own
+  initiative, and do not restart a ticket that is already In Progress unless the user said to
+  (then reuse its worktree/branch — `worktree.sh open` does that). When the user names the
+  tickets explicitly ("work #1822–1834"), that *is* the pull: move each through
+  `board.sh move <n> Ready` as you start it, and say so once.
+- The ticket asks for a design choice rather than a fix (a "to discuss with …" marker, "to be
+  decided", competing options in the comments) → do not build a guess. Comment the specific
+  decisions needed, numbered so they can be answered inline, leave the card where it is, and
+  move on to the next ticket.
 - Issue closed → stop.
 - Assign yourself: `gh issue edit <n> --repo idclear/monorepo --add-assignee @me`.
 
@@ -232,8 +238,12 @@ Everything in ticket-to-pr's list, plus:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `gh: command not found` | outside devenv | `devenv shell -- bash $S/…` |
+| `gh: command not found` | outside devenv | `devenv shell -- bash $S/…`, or `nix shell nixpkgs#gh --command …` where devenv cannot evaluate |
 | `devenv.nix file does not exist` in the worktree | worktree branch predates the vendored `nix/devenv-modules/`, or a submodule is not initialised | rebase onto current `origin/staging`; `git -C "$WT" submodule update --init --recursive` (`open` does this) |
+| Entering devenv modified a file you never touched | `devenv:git-hooks:run` runs the pre-commit formatter over the whole tree on every entry | `git checkout -- <file>` before committing — unless `format:check` fails on base too, in which case that file blocks every PR: carry the format fix as its own `style:` commit and say why in the PR |
+| Commit fails "Stashed changes conflicted with changes made by hook" | same formatter rewrote an unstaged file | as above |
+| Every commit/push in every checkout fails after cleanup | devenv entry in the worktree re-installed the shared prek hooks with `--config=<worktree>/…` | `worktree.sh close` repoints them at the main checkout; for a worktree removed by hand, `sed -i 's#<wt>/#<main>/#' "$(git rev-parse --git-common-dir)"/hooks/*` |
+| A unit test of the reader passes, the bug persists | the step never receives the cell — `display.values` carries only the step's *own* declared cells | the regression test must go through the step builder and the controller's prefill functions, not hand the reader the row |
 | Card jumped to Done on merge | PR said `Closes #n` | use `Refs #n`; move the card back to Staging after the deploy |
 | `move` exit 3 on In Progress / In Review | board has no such column | log it and carry on |
 | `watch-deploy` sits at "no deployment contains …" | poller skipped (deploy in flight) or timer stopped | `ssh targ@… systemctl status coolify-staging-poller.timer` — report, do not trigger deploys yourself |
