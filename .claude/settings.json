@@ -44,7 +44,7 @@
       {
         "hooks": [
           {
-            "command": "/nix/store/pnyj7dzwf06dw8fs5770djp402fjsr8n-lean-ctx-3.9.18/bin/lean-ctx hook read-dedup",
+            "command": "/run/current-system/sw/bin/lean-ctx hook read-dedup",
             "type": "command"
           }
         ],
@@ -66,7 +66,7 @@
       {
         "hooks": [
           {
-            "command": "/nix/store/pnyj7dzwf06dw8fs5770djp402fjsr8n-lean-ctx-3.9.18/bin/lean-ctx hook rewrite",
+            "command": "/run/current-system/sw/bin/lean-ctx hook rewrite",
             "type": "command"
           }
         ],
@@ -75,7 +75,7 @@
       {
         "hooks": [
           {
-            "command": "/nix/store/pnyj7dzwf06dw8fs5770djp402fjsr8n-lean-ctx-3.9.18/bin/lean-ctx hook redirect",
+            "command": "/run/current-system/sw/bin/lean-ctx hook redirect",
             "type": "command"
           }
         ],

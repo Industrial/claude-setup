@@ -1,2 +1,2 @@
 #!/bin/sh
-exec "/nix/store/pnyj7dzwf06dw8fs5770djp402fjsr8n-lean-ctx-3.9.18/bin/lean-ctx" hook redirect
+exec "/run/current-system/sw/bin/lean-ctx" hook redirect

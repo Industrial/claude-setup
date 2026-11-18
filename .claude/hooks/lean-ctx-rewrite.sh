@@ -2,7 +2,7 @@
 # lean-ctx PreToolUse hook — rewrites bash commands to lean-ctx equivalents
 set -euo pipefail
 
-LEAN_CTX_BIN="/nix/store/pnyj7dzwf06dw8fs5770djp402fjsr8n-lean-ctx-3.9.18/bin/lean-ctx"
+LEAN_CTX_BIN="/run/current-system/sw/bin/lean-ctx"
 
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | grep -oE '"tool_name":"([^"\\]|\\.)*"' | head -1 | sed 's/^"tool_name":"//;s/"$//' | sed 's/\\"/"/g;s/\\\\/\\/g')
