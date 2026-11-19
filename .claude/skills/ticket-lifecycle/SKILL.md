@@ -3,7 +3,8 @@ name: ticket-lifecycle
 description: >-
   Drive one ticket on the idclear project board (github.com/orgs/idclear/projects/4)
   from Ready to Staging unattended: move the card as work progresses, do the work in an
-  auto-cleaned git worktree off staging (via ticket-to-pr), open the PR with auto-merge
+  auto-cleaned, light git worktree off staging (no install, no local gates: the PR's CI is
+  the gate, via ticket-to-pr), open the PR with auto-merge
   armed, comment the PR link on the ticket, wait for the merge, confirm the Coolify deploy
   on the testing host actually contains it, then move the card to Staging. Use when handed
   a ticket number with "run the lifecycle", "take #1234 from Ready to Staging", "work the
@@ -20,10 +21,10 @@ and follow it for those phases. This one adds what happens around them:
 | Stage | Card moves to | Done when |
 |---|---|---|
 | 0 Preflight | — | token has `project` scope, card is in **Ready** |
-| 1 Start | **In Progress** | worktree exists and is bootstrapped |
-| 2 Work | — | `ticket-to-pr` Phases 0–4 pass inside the worktree |
+| 1 Start | **In Progress** | a light worktree exists (no install, no gates) |
+| 2 Work | — | `ticket-to-pr` Phases 0–4 done inside the worktree, minus its local gates |
 | 3 PR | **In Review** | PR open, auto-merge armed, PR link commented on the ticket |
-| 4 Merge | — | `watch-pr.sh` exits `0` |
+| 4 Merge | — | `watch-pr.sh` exits `0`: the PR's CI is the quality gate |
 | 5 Cleanup | — | worktree removed |
 | 6 Deploy | **Staging** | `watch-deploy.sh` exits `0`, deploy comment posted |
 
@@ -40,6 +41,28 @@ T=~/.claude/skills/ticket-to-pr/scripts         # reused: ingest-ticket.sh, watc
 Every script needs `gh` and `jq`. `gh` is on PATH inside `devenv shell`, not outside it — run
 the scripts as `devenv shell -- bash $S/<script> …` if `gh` is not found. Scripts write only
 under `.tmp/` in the current checkout, so the write-path guard never fires.
+
+### Worktrees are light: CI is the gate
+
+A ticket worktree is a **checkout and nothing more**. No `bun install`, no `devenv shell`,
+no local lint, typecheck, test or coverage run inside it. The PR's CI runs every one of those
+gates, and Stage 4 waits on that CI. This keeps a worktree to a few seconds and a few
+megabytes, so many tickets can run side by side. Three rules follow from it:
+
+1. **Never enter `devenv shell` inside a worktree.** Entry re-installs the shared prek
+   hooks with `--config=<that worktree>/…`, which breaks every commit in every checkout
+   once the worktree is gone. Run `git` natively in the worktree. Run `gh` and this
+   skill's scripts from the **main checkout's** devenv, which every command here supports:
+   `(cd "$HOME_TREE" && devenv shell -- gh pr create --repo idclear/monorepo --head <branch> …)`.
+2. **Commit and push with `--no-verify`.** The hooks in `.git/hooks` are shared by every
+   worktree, and they run `moon :lint :test`/`:coverage` against the worktree, which has
+   no `node_modules`. They would fail on the missing install, not on the change. Skipping
+   them is safe here only because the PR's CI runs the same gates. Never use
+   `--no-verify` outside a light worktree.
+3. **Read and edit code only.** Static tools that need no install still help: `git diff`,
+   `git grep`, and reading neighbouring tests. Anything that needs `node_modules` (a test
+   run, `tsgo`, biome, oxlint) is CI's job. When you need to know whether a change type-checks
+   or a test passes, push and read the CI log. Do not install to find out.
 
 Board defaults (override with env): `BOARD_OWNER=idclear BOARD_NUMBER=4 BOARD_FIELD=Status
 BOARD_REPO=idclear/monorepo`. The columns are the options of the `Status` field. Names are
@@ -79,6 +102,13 @@ gh issue view <n> --repo idclear/monorepo --json state,title,assignees
   move on to the next ticket.
 - Issue closed → stop.
 - Assign yourself: `gh issue edit <n> --repo idclear/monorepo --add-assignee @me`.
+- **Rework.** A card back in Ready after it was in Staging (the business team drags tickets
+  back to Ready when testing found more to do) is rework, not a fresh ticket. The comments
+  after the last deploy comment are the new requirement. Read them first, and treat the
+  earlier PR as what was already tried. `worktree.sh open` sees the old branch's PR merged
+  and cuts a fresh branch off current staging, so the rework never builds on stale history.
+  To list what came back: `.tmp/status-history.sh`-style timeline queries for
+  `PROJECT_V2_ITEM_STATUS_CHANGED_EVENT` with `previousStatus: Staging`.
 
 ## Stage 1 — Start
 
@@ -91,36 +121,50 @@ cd "$WT"
 
 `<slug>` is 2–5 kebab-case words from the issue title. The worktree is created under
 `.tmp/worktrees/gh-<n>` of the **current** checkout, on a new branch `<type>/gh-<n>-<slug>`
-off `origin/staging` (an existing branch for the ticket is reused). `open` also initialises
-any submodules. The devenv modules themselves are vendored under `nix/devenv-modules/`,
-so `devenv` no longer depends on a submodule checkout.
+off `origin/staging` (an existing branch for the ticket is reused).
 
-Bootstrap once, from inside the worktree:
+There is **no bootstrap step**. `open` leaves submodules uninitialised: the code never needs
+`.claude-setup`, and `nix/devenv-modules/` is vendored. Pass `--submodules` only if the ticket
+edits a submodule. Do not run `bun install`. See "Worktrees are light" above.
 
-```bash
-devenv shell -- bun install --frozen-lockfile
-```
-
-**From here until Stage 5, every command runs in `$WT`.** Re-`cd` if a shell resets.
+**From here until Stage 5, `git` and file edits run in `$WT`. `gh` and the scripts run from
+`$HOME_TREE`'s devenv** (rule 1 above). Re-`cd` if a shell resets.
 
 ## Stage 2 — Work (ticket-to-pr Phases 0–4)
 
-Follow `ticket-to-pr` Phase 0 (ingest) through Phase 4 (review) verbatim, inside `$WT`, using
-`$T/ingest-ticket.sh`. Its coverage leaf, stop conditions and three-red-rounds rule all apply.
+Follow `ticket-to-pr` Phase 0 (ingest) through Phase 4 (review) inside `$WT`, using
+`$T/ingest-ticket.sh` (run from `$HOME_TREE`: it needs `gh`). Its coverage leaf, stop
+conditions and three-red-rounds rule all apply.
 
-One override: **skip ticket-to-pr Phase 5's `git switch -c`** — the worktree is already on the
-ticket branch, based on `origin/staging`. If `origin/staging` moved while you worked,
-`git fetch origin staging && git rebase origin/staging` before pushing.
+Overrides, all following from light worktrees:
+
+- **No local gates.** Skip ticket-to-pr Phase 3's per-leaf gate commands (`oxlint`,
+  `typecheck`, `moon run :test`) and Phase 5's `ci:pre-push`. The PR's CI runs them; Stage 4
+  is where you find out.
+- **The coverage leaf is still mandatory:** write the test that witnesses the fix. You cannot
+  watch it fail locally, so state in the PR body why it fails on `origin/staging` (the
+  assertion and the line it contradicts). CI shows it passing with the fix.
+- **Review is a reading pass.** Phase 4's lenses read the diff. They do not run gates.
+- **Skip Phase 5's `git switch -c`.** The worktree is already on the ticket branch, based on
+  `origin/staging`. If `origin/staging` moved while you worked,
+  `git fetch origin staging && git rebase origin/staging` before pushing.
 
 ## Stage 3 — PR, auto-merge, link it on the ticket
 
-Commit, gate and push as in ticket-to-pr Phase 5, then:
+Commit and push from `$WT` without running hooks (rule 2), then open the PR from
+`$HOME_TREE`:
 
 ```bash
-gh pr create --base staging --title "<type>(<scope>): <summary> (GH-<n>)" \
-  --body-file .tmp/tickets/<n>/pr-body.md
-gh pr merge <pr> --auto --squash          # never --admin; refusals as in ticket-to-pr
+git -C "$WT" commit --no-verify -F .tmp/tickets/<n>/commit-msg.txt     # message shape: ticket-to-pr Phase 5
+git -C "$WT" push --no-verify -u origin <type>/gh-<n>-<slug>
+cd "$HOME_TREE"
+devenv shell -- gh pr create --repo idclear/monorepo --base staging --head <type>/gh-<n>-<slug> \
+  --title "<type>(<scope>): <summary> (GH-<n>)" --body-file .tmp/tickets/<n>/pr-body.md
+devenv shell -- gh pr merge <pr> --repo idclear/monorepo --auto --squash   # never --admin
 ```
+
+Write the commit message to a file rather than a heredoc: the shell guard reads words such
+as "find" inside a quoted message as commands.
 
 The PR body references the ticket with **`Refs #<n>`, never `Closes`/`Fixes #<n>`**. A closing
 keyword closes the issue on merge, and the board's built-in "Item closed" workflow then moves
@@ -142,7 +186,13 @@ bash $T/watch-pr.sh <pr> --interval 30 --timeout-min 45
 ```
 
 Run it in the background and poll; exit codes and what to do for each are in ticket-to-pr
-Phase 7. Only exit `0` continues. Exit `4` (`REVIEW_REQUIRED` and friends) means auto-merge is
+Phase 7. Only exit `0` continues.
+
+**This watch is the quality gate.** Every lint, type, test and coverage failure surfaces here
+first, because nothing ran locally. On exit `1`, read `.tmp/ci/pr-<pr>-run-<id>.log`, fix in
+`$WT`, commit and push with `--no-verify`, and re-arm the watcher. Each push counts toward
+ticket-to-pr's three-red-rounds limit. A red check that also fails on `staging` is not
+yours: say so in the PR and do not chase it. Exit `4` (`REVIEW_REQUIRED` and friends) means auto-merge is
 armed and a human has to act: report it, **leave the card in In Review**, keep the worktree,
 and stop — re-invoking the skill later resumes at this stage.
 
@@ -203,6 +253,29 @@ Then report: ticket, PR, merge sha, the deployment line, the board move, and any
 from the rundown still awaiting the reporter. **Do not close the ticket.**
 
 ---
+
+## Many tickets at once
+
+Light worktrees exist to make this cheap: one subagent per ticket, each in its own
+`.tmp/worktrees/gh-<n>`, all running Stages 0–6 concurrently.
+
+- **The orchestrator does the board work first, serially:** preflight (`board.sh check`
+  once), assignment, and the Ready-column triage. It skips tickets assigned to someone
+  else unless told otherwise. Each subagent then owns exactly one ticket, its worktree and
+  its PR. Two agents never share a worktree.
+- **Brief each subagent with the light-worktree rules verbatim** (no install, no
+  `devenv shell` in the worktree, `--no-verify`, `gh` from the main checkout). A subagent
+  that installs or gates locally defeats the point and races the others for memory.
+- **Overlapping tickets** (same files, same step or screen) go to one agent, sequentially,
+  or the second PR is cut after the first merges. Otherwise both rebase-conflict at merge time.
+- **Deploys are shared.** Every merge to staging triggers one Coolify deploy, and the poller
+  skips ticks while one runs, so a later deploy can contain several tickets.
+  `watch-deploy.sh` accepts any finished deployment that *contains* the merge commit. Let
+  each agent run its own Stage 6, or have the orchestrator watch the last merge once and move
+  every card it contains.
+- **Stop conditions stay per ticket.** One ticket stopping for a human (a design decision,
+  watcher exit `4`) does not stop the others.
+- Finish with `worktree.sh gc` from the main checkout.
 
 ## Access — why Stage 0 can fail with exit 10
 
