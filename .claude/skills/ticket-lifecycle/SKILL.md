@@ -81,6 +81,43 @@ below rather than by editing the script.
 failure — the board may not have that column; log it and continue. For **Staging** it is a
 stop: run `board.sh columns`, report the real names, and hand back.
 
+### Profiles
+
+Everything above is the idclear profile, and it is what you get with no env set. Another
+repo runs the same lifecycle by exporting a profile before Stage 0. Every knob is env:
+
+| Env | Default (idclear) | Read by |
+|---|---|---|
+| `BOARD_OWNER`, `BOARD_NUMBER`, `BOARD_FIELD`, `BOARD_REPO` | `idclear`, `4`, `Status`, `idclear/monorepo` | `board.sh`, `worktree.sh` |
+| `BOARD_OWNER_TYPE` | `org` (`user` for a user-owned board, `auto` tries org then user) | `board.sh` |
+| `BOARD_GH_TOKEN` | unset (use `GH_TOKEN` / the gh login) | `board.sh` only |
+| `BASE_BRANCH` | `staging` | `worktree.sh`, `watch-deploy.sh`, and every `staging` in the stages below |
+| `DEPLOY_WATCH` | `bash $S/watch-deploy.sh` | Stage 6 |
+
+`BOARD_GH_TOKEN` is for a board whose account differs from the repo's: set it to the
+board account's token and `board.sh` uses it for its own gh calls, while `GH_TOKEN` keeps
+serving every other one.
+
+**dotfiles** (`Industrial/nixos-dotfiles`; the board is owned by the `Industrial` user, and
+the one `Industrial` token covers repo and board once it has the `project` scope, so
+`BOARD_GH_TOKEN` stays unset):
+
+```bash
+export BOARD_OWNER=Industrial BOARD_OWNER_TYPE=user BOARD_NUMBER=<n> BOARD_FIELD=Stage \
+       BOARD_REPO=Industrial/nixos-dotfiles BASE_BRANCH=main DEPLOY_WATCH=bin/watch-fleet
+export GH_TOKEN="$(gh auth token --user Industrial)"
+```
+
+`BOARD_NUMBER=<n>` is a placeholder: the board's number is filled in once it exists.
+
+Its columns (`Stage` options) are Ready, In Progress, In Review, Deployed. The Staging
+alias list `Staging|On Staging|Deployed` already matches Deployed, so the stage table above
+is unchanged. Read `--base staging` and `origin/staging` below as `$BASE_BRANCH` (`main`),
+and `--repo idclear/monorepo` as `$BOARD_REPO`. Stage 6 is
+`bin/watch-fleet <sha> --probe '<cmd>'` (nixos-dotfiles #151): it waits for the fleet to run
+the merge commit, then runs the probe, with the same exit codes `0`/`1`/`2`/`3` as
+`watch-deploy.sh`.
+
 ---
 
 ## Stage 0 — Preflight
@@ -229,6 +266,9 @@ the public URL cannot say which version runs (Cloudflare Access, versionless `/h
 ```bash
 bash $S/watch-deploy.sh "$MERGE_SHA" --interval 60 --timeout-min 40
 ```
+
+With a profile's `DEPLOY_WATCH` set, run that watcher instead (dotfiles:
+`$DEPLOY_WATCH "$MERGE_SHA" --probe '<cmd>'`); the exit table below holds for both.
 
 It asks the Coolify API on the host over SSH (`targ@212.227.30.157`, `DEPLOY_SSH` overrides)
 which deployments exist, and succeeds when the newest one whose commit **contains** the merge

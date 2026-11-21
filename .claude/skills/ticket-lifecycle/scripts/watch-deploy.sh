@@ -15,7 +15,7 @@
 # that is still our change deployed. Then the origin's /healthz must answer 200.
 #
 # Usage:  watch-deploy.sh <merge-sha> [--interval 60] [--timeout-min 40]
-# Env:    DEPLOY_SSH=targ@212.227.30.157
+# Env:    DEPLOY_SSH=targ@212.227.30.157  BASE_BRANCH=staging (the branch that deploys)
 #
 # Exit:   0 deployed and healthy (prints the deployment line)
 #         1 the newest deployment containing the commit FAILED and nothing newer is queued
@@ -36,12 +36,13 @@ done
 [ -n "$sha" ] || { sed -n '17,18p' "$0" >&2; exit 64; }
 
 host="${DEPLOY_SSH:-targ@212.227.30.157}"
+base_branch="${BASE_BRANCH:-staging}"
 ssh_opts=(-o BatchMode=yes -o ConnectTimeout=15)
 deadline=$(( $(date +%s) + timeout_min * 60 ))
 
-git fetch -q origin staging || true
+git fetch -q origin "$base_branch" || true
 sha="$(git rev-parse --verify "$sha^{commit}" 2>/dev/null)" || {
-    echo "watch-deploy: $sha is not a commit known here (fetch origin staging?)" >&2; exit 64; }
+    echo "watch-deploy: $sha is not a commit known here (fetch origin $base_branch?)" >&2; exit 64; }
 
 # Logs are huge; strip them on the way out so only the summary crosses the wire
 # when jq exists on the host, and locally otherwise.
@@ -59,7 +60,7 @@ healthz() {
 
 contains() {  # does deployed commit $1 contain our sha?
     [[ "$1" =~ ^[0-9a-f]{40}$ ]] || return 1
-    git cat-file -e "$1^{commit}" 2>/dev/null || git fetch -q origin staging || true
+    git cat-file -e "$1^{commit}" 2>/dev/null || git fetch -q origin "$base_branch" || true
     git merge-base --is-ancestor "$sha" "$1" 2>/dev/null
 }
 
