@@ -103,14 +103,14 @@ the one `Industrial` token covers repo and board once it has the `project` scope
 `BOARD_GH_TOKEN` stays unset):
 
 ```bash
-export BOARD_OWNER=Industrial BOARD_OWNER_TYPE=user BOARD_NUMBER=<n> BOARD_FIELD=Stage \
+export BOARD_OWNER=Industrial BOARD_OWNER_TYPE=user BOARD_NUMBER=3 BOARD_FIELD=Status \
        BOARD_REPO=Industrial/nixos-dotfiles BASE_BRANCH=main DEPLOY_WATCH=bin/watch-fleet
 export GH_TOKEN="$(gh auth token --user Industrial)"
 ```
 
-`BOARD_NUMBER=<n>` is a placeholder: the board's number is filled in once it exists.
+The board is https://github.com/users/Industrial/projects/3, on its built-in `Status` field.
 
-Its columns (`Stage` options) are Ready, In Progress, In Review, Deployed. The Staging
+Its columns (`Status` options) are Ready, In Progress, In Review, Deployed. The Staging
 alias list `Staging|On Staging|Deployed` already matches Deployed, so the stage table above
 is unchanged. Read `--base staging` and `origin/staging` below as `$BASE_BRANCH` (`main`),
 and `--repo idclear/monorepo` as `$BOARD_REPO`. Stage 6 is
