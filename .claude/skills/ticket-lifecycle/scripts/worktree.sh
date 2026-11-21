@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One git worktree per ticket, under the current checkout's gitignored .tmp/,
-# created off origin/staging and removed again once the work has landed.
+# created off origin/$BASE_BRANCH (default staging) and removed again once the
+# work has landed.
 #
 # The worktree lives INSIDE the working tree on purpose: the write-path guard
 # refuses writes outside it, and .tmp/ is already gitignored.
@@ -19,7 +20,7 @@
 # existing local or remote branch is checked out rather than recreated, unless
 # that branch's PR has already MERGED. A ticket dragged back from Staging to
 # Ready is rework, and continuing its squash-merged branch would pile new work
-# onto stale history. It gets a fresh `-r2`, `-r3`, … branch off origin/staging.
+# onto stale history. It gets a fresh `-r2`, `-r3`, … branch off the base branch.
 # This check needs `gh`; without it a branch is assumed unmerged.
 #
 # `close` refuses while the worktree has uncommitted changes or commits that
@@ -27,10 +28,15 @@
 # can hurt. --force overrides that. Branches are never deleted (the guard hook
 # forbids it, and GitHub's delete-on-merge already handles the remote one).
 #
+# Env:  BASE_BRANCH=staging   the branch worktrees start from and PRs land on
+#       BOARD_REPO=idclear/monorepo   where `open` looks for a branch's merged PR
+#
 # Exit: 0 ok · 1 refused (dirty / unpushed) · 2 no worktree · 64 usage.
 set -euo pipefail
 
-usage() { sed -n '8,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
+base_branch="${BASE_BRANCH:-staging}"
+
+usage() { sed -n '9,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
 
 top="$(git rev-parse --show-toplevel)"
 base="$top/.tmp/worktrees"
@@ -47,9 +53,9 @@ close_one() {
         if up="$(git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then
             git -C "$wt" fetch -q origin "${up#origin/}" 2>/dev/null || true
             if [ -n "$(git -C "$wt" log --oneline '@{u}..HEAD' 2>/dev/null)" ]; then
-                # Commits not on the branch may still be on staging (squash-merged
-                # and the remote branch deleted) — only refuse if staging lacks the tree.
-                if ! git -C "$wt" diff --quiet origin/staging HEAD -- 2>/dev/null; then
+                # Commits not on the branch may still be on the base branch (squash-merged
+                # and the remote branch deleted) — only refuse if the base lacks the tree.
+                if ! git -C "$wt" diff --quiet "origin/$base_branch" HEAD -- 2>/dev/null; then
                     echo "worktree.sh: $wt has commits not on $up; refusing (use --force)" >&2; return 1
                 fi
             fi
@@ -95,7 +101,7 @@ case "$cmd" in
         if [ -d "$wt" ]; then echo "$wt"; exit 0; fi
 
         mkdir -p "$base"
-        git fetch -q origin staging
+        git fetch -q origin "$base_branch"
         git fetch -q --prune origin 2>/dev/null || true
 
         # A branch whose PR merged is finished history, not work in progress.
@@ -123,14 +129,14 @@ case "$cmd" in
         elif [ "$where" = remote ]; then
             git worktree add -q --track -b "$pick" "$wt" "origin/$pick" >&2
         else
-            # New work, or rework after a merge: a fresh branch off staging. The
+            # New work, or rework after a merge: a fresh branch off the base. The
             # first free name among <type>/gh-<n>-<slug>, -r2, -r3, ….
             name="$type/gh-$n-$slug"; k=1
             while git show-ref --verify -q "refs/heads/$name" ||
                   git show-ref --verify -q "refs/remotes/origin/$name"; do
                 k=$((k + 1)); name="$type/gh-$n-$slug-r$k"
             done
-            git worktree add -q --no-track -b "$name" "$wt" origin/staging >&2
+            git worktree add -q --no-track -b "$name" "$wt" "origin/$base_branch" >&2
         fi
         # Light by default: the code never needs .claude-setup, and the devenv
         # modules are vendored under nix/devenv-modules/.

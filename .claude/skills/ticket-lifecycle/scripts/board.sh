@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read and move a ticket's card on the org's GitHub Projects (v2) board.
+# Read and move a ticket's card on a GitHub Projects (v2) board, org- or user-owned.
 #
 # The board is a ProjectV2; its columns are the options of the single-select
 # "Status" field. Moving a card means setting that field's value on the issue's
@@ -20,6 +20,8 @@
 #
 # Env (defaults are idclear's board):
 #   BOARD_OWNER=idclear  BOARD_NUMBER=4  BOARD_FIELD=Status  BOARD_REPO=idclear/monorepo
+#   BOARD_OWNER_TYPE=org  org | user | auto (auto: try the org, fall back to the user)
+#   BOARD_GH_TOKEN        when set, the GH_TOKEN for this script's own gh calls
 #
 # Exit: 0 ok · 3 no option matched the requested column · 10 token lacks the
 #       project scope · 64 usage · anything else is gh/GraphQL failing.
@@ -29,9 +31,16 @@ owner="${BOARD_OWNER:-idclear}"
 number="${BOARD_NUMBER:-4}"
 field="${BOARD_FIELD:-Status}"
 repo="${BOARD_REPO:-idclear/monorepo}"
+owner_type="${BOARD_OWNER_TYPE:-org}"
+
+# The board's account can differ from the repo's: on a user-owned board only
+# the owner's own token may carry the `project` scope.
+if [ -n "${BOARD_GH_TOKEN:-}" ]; then
+    export GH_TOKEN="$BOARD_GH_TOKEN"
+fi
 
 die() { echo "board.sh: $1" >&2; exit "${2:-1}"; }
-usage() { sed -n '12,25p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
+usage() { sed -n '12,27p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
 
 # Lower-case and strip everything that is not a letter or digit, so
 # "🚀 In Progress", "in-progress" and "In progress" all compare equal.
@@ -51,14 +60,26 @@ gql() {
     printf '%s\n' "$out"
 }
 
-meta() {
+# The board's metadata, with the owner looked up as $1: organization or user.
+meta_as() {
+    # shellcheck disable=SC2016  # $org, $num, $fld are GraphQL variables, not shell ones
     gql -F num="$number" -f org="$owner" -f fld="$field" -f query='
       query($org:String!,$num:Int!,$fld:String!){
-        organization(login:$org){ projectV2(number:$num){
+        '"$1"'(login:$org){ projectV2(number:$num){
           id title url
           field(name:$fld){ ... on ProjectV2SingleSelectField { id name options { id name } } }
         } }
-      }' --jq '.data.organization.projectV2'
+      }' --jq ".data.$1.projectV2"
+}
+
+meta() {
+    case "$owner_type" in
+        org) meta_as organization ;;
+        user) meta_as user ;;
+        # A subshell, so the org attempt's exit does not end the script.
+        auto) (meta_as organization 2>/dev/null) || meta_as user ;;
+        *) die "BOARD_OWNER_TYPE must be org, user or auto, not '$owner_type'" 64 ;;
+    esac
 }
 
 # The issue's node id, and its item on THIS board if it has one.
