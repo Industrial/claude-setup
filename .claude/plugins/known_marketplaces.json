@@ -5,7 +5,7 @@
       "path": "/home/tom/.dotfiles/.claude/harness"
     },
     "installLocation": "/home/tom/.dotfiles/.claude/harness",
-    "lastUpdated": "2026-11-18T08:29:00.215Z"
+    "lastUpdated": "2026-11-21T06:16:15.764Z"
   },
   "agricidaniel-claude-obsidian": {
     "source": {
@@ -21,6 +21,6 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/home/tom/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-11-18T08:34:43.216Z"
+    "lastUpdated": "2026-11-21T23:36:51.975Z"
   }
 }
